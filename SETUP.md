@@ -2,6 +2,10 @@
 
 本文件說明如何設定咖啡豆訂單系統的完整環境。
 
+> **相關文件：**
+> - [README.md](README.md) - 專案說明和快速開始
+> - [DATABASE.md](DATABASE.md) - 詳細的資料庫結構說明
+
 ## 一、Airtable 設定
 
 ### 1. 建立 Base
@@ -435,7 +439,13 @@ curl -X POST http://localhost:3000/api/products \
 - `Order Status Log` 表的 `order` 欄位是否正確連結到 `Orders` 表
 - 如果不需要狀態歷程記錄，可以忽略此錯誤
 
-## 八、下一步
+## 八、資料庫結構
 
-完成設定後，請參考 [README.md](README.md) 開始使用系統。
+詳細的資料庫結構說明、欄位定義、關係圖和 API 格式，請參考 [DATABASE.md](DATABASE.md) 文件。
+
+## 九、下一步
+
+完成設定後，請參考：
+- [README.md](README.md) - 開始使用系統
+- [DATABASE.md](DATABASE.md) - 了解資料庫結構
 

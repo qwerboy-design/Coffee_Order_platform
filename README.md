@@ -97,14 +97,44 @@ Coffee_Order_platform/
 │   ├── (customer)/        # 顧客端頁面
 │   ├── (admin)/           # 後台管理頁面
 │   └── api/               # API Routes
+│       ├── diagnostics/   # 診斷 API（用於檢查 Airtable 連線）
+│       ├── orders/        # 訂單 API
+│       └── products/       # 商品 API
 ├── components/            # React 元件
+│   ├── admin/             # 後台管理元件
+│   ├── customer/          # 顧客端元件
+│   └── shared/            # 共用元件
 ├── lib/                   # 工具函數與配置
 │   ├── airtable/          # Airtable 操作
+│   │   ├── client.ts      # Airtable 客戶端配置
+│   │   ├── customers.ts   # 客戶資料操作
+│   │   ├── diagnostics.ts # 診斷工具
+│   │   ├── orders.ts      # 訂單操作
+│   │   └── products.ts    # 商品操作
 │   ├── n8n/               # N8N 整合
-│   └── validation/        # 資料驗證
-├── types/                 # TypeScript 型別
+│   ├── utils/             # 工具函數
+│   │   ├── format.ts      # 格式化函數（enum 轉換）
+│   │   └── order.ts       # 訂單相關工具
+│   └── validation/        # 資料驗證（Zod schemas）
+├── types/                 # TypeScript 型別定義
+│   ├── customer.ts        # 客戶型別
+│   ├── order.ts           # 訂單型別
+│   └── product.ts         # 商品型別
 └── hooks/                 # React Hooks
+    └── useCart.ts         # 購物車 Hook
 ```
+
+## 資料庫結構
+
+系統使用 Airtable 作為資料庫，包含 5 個主要 Table：
+
+- **Products** - 商品資料表
+- **Orders** - 訂單主檔表
+- **Order Items** - 訂單明細表
+- **Customers** - 客戶資料表
+- **Order Status Log** - 訂單狀態歷程表
+
+詳細的資料庫結構說明請參考 [DATABASE.md](DATABASE.md) 文件。
 
 ## API 端點
 
@@ -235,7 +265,21 @@ GitHub Pages 只支援靜態網站，無法運行 Next.js 的服務器端功能�
 
 ### 環境變數
 
-確保在 Vercel Dashboard 的「Environment Variables」中設定所有必要的環境變數。
+確保在 Vercel Dashboard 的「Environment Variables」中設定所有必要的環境變數：
+
+**必填環境變數：**
+- `AIRTABLE_API_KEY` - Airtable API 金鑰
+- `AIRTABLE_BASE_ID` - Airtable Base ID
+
+**可選環境變數：**
+- `N8N_WEBHOOK_URL` - N8N Webhook URL（用於訂單通知）
+- `N8N_WEBHOOK_SECRET` - N8N Webhook 密鑰
+- `LINE_NOTIFY_TOKEN` - LINE Notify Token（可選）
+- `EMAIL_API_KEY` - Email 服務 API Key（可選）
+- `EMAIL_FROM` - 發送者 Email（可選）
+- `NEXT_PUBLIC_APP_URL` - 應用程式公開 URL（用於生成連結）
+
+**注意：** 構建時環境變數可以為空，系統已處理此情況。運行時必須設定所有必填環境變數。
 
 ## 授權
 
