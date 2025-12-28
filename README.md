@@ -153,14 +153,89 @@ curl -X POST http://localhost:3000/api/products \
 
 ### Vercel 部署（推薦）
 
-1. 將專案推送到 GitHub
-2. 在 Vercel 匯入專案
-3. 設定環境變數
-4. 部署完成
+Vercel 是部署 Next.js 應用的最佳選擇，提供原生支援和自動部署。
+
+#### 方法 1：透過 Vercel Dashboard（最簡單）
+
+1. **註冊 Vercel 帳號**
+   - 前往 [Vercel](https://vercel.com)
+   - 使用 GitHub 帳號登入
+
+2. **匯入專案**
+   - 點擊「Add New Project」
+   - 選擇 `qwerboy-design/Coffee_Order_platform` 倉庫
+   - 點擊「Import」
+
+3. **設定環境變數**
+   - 在「Environment Variables」區塊添加：
+     ```
+     AIRTABLE_API_KEY=your_api_key
+     AIRTABLE_BASE_ID=your_base_id
+     N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook
+     N8N_WEBHOOK_SECRET=your_webhook_secret
+     ```
+   - 可選環境變數：
+     ```
+     LINE_NOTIFY_TOKEN=your_line_token
+     EMAIL_API_KEY=your_email_api_key
+     EMAIL_FROM=noreply@yourdomain.com
+     NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
+     ```
+
+4. **部署**
+   - 點擊「Deploy」
+   - 等待構建完成（約 2-3 分鐘）
+   - 部署完成後會獲得一個 `*.vercel.app` 網址
+
+#### 方法 2：使用 Vercel CLI
+
+```bash
+# 安裝 Vercel CLI
+npm i -g vercel
+
+# 登入
+vercel login
+
+# 部署
+vercel
+
+# 生產環境部署
+vercel --prod
+```
+
+#### 方法 3：使用 GitHub Actions（自動部署）
+
+專案已包含 `.github/workflows/deploy-vercel.yml`，設定後可自動部署：
+
+1. 在 Vercel Dashboard 取得：
+   - `VERCEL_TOKEN`（Settings → Tokens）
+   - `VERCEL_ORG_ID`（Settings → General）
+   - `VERCEL_PROJECT_ID`（Project Settings → General）
+
+2. 在 GitHub 倉庫設定 Secrets：
+   - Settings → Secrets and variables → Actions
+   - 添加以下 Secrets：
+     - `VERCEL_TOKEN`
+     - `VERCEL_ORG_ID`
+     - `VERCEL_PROJECT_ID`
+     - `AIRTABLE_API_KEY`
+     - `AIRTABLE_BASE_ID`
+
+3. 推送代碼到 `main` 分支即可自動部署
+
+### 為什麼不使用 GitHub Pages？
+
+GitHub Pages 只支援靜態網站，無法運行 Next.js 的服務器端功能（API Routes、SSR 等）。Vercel 提供：
+- ✅ 原生 Next.js 支援
+- ✅ 自動 HTTPS
+- ✅ 全球 CDN
+- ✅ 環境變數管理
+- ✅ 自動構建和部署
+- ✅ 免費方案
 
 ### 環境變數
 
-確保在部署平台設定所有必要的環境變數。
+確保在 Vercel Dashboard 的「Environment Variables」中設定所有必要的環境變數。
 
 ## 授權
 
