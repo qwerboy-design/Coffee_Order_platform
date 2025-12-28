@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { diagnoseAllTables } from '@/lib/airtable/diagnostics';
 
+// 標記為動態路由，避免構建時預渲染（需要運行時環境變數）
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET() {
   try {
     const results = await diagnoseAllTables();

@@ -1,0 +1,13 @@
+{
+  "ignore_dirs": [
+    "node_modules",
+    ".git",
+    ".next",
+    "AppData",
+    "INetCache",
+    "Content.IE5",
+    "Local Settings",
+    "Temp"
+  ]
+}
+

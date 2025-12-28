@@ -38,5 +38,10 @@ next-env.d.ts
 # debug logs
 .cursor/debug.log
 
+# Windows system directories (to prevent file watcher issues)
+AppData/
+INetCache/
+Content.IE5/
+
 
 
