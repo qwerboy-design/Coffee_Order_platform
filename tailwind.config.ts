@@ -6,6 +6,7 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: 'media', // 啟用深色模式支持（基於系統偏好）
   theme: {
     extend: {
       colors: {

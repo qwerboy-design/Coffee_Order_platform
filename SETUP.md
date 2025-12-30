@@ -273,35 +273,448 @@ docker run -it --rm \
   n8nio/n8n
 ```
 
-### 2. 建立 Workflow 1：訂單建立流程
+### 2. 建立 Workflow 1：訂單建立流程（Gmail Email 通知）
 
-1. 建立新 Workflow
-2. 新增 **Webhook** 節點：
-   - Method: POST
-   - Path: `/order-created`
-   - Response Mode: Respond When Last Node Finishes
-3. 新增 **Function** 節點（資料處理）：
-```javascript
-// 格式化訂單資料
-const order = $input.item.json;
+本 Workflow 會在收到訂單時自動發送格式化的 Email 通知到您的 Gmail 信箱。
 
-return {
-  json: {
-    order_id: order.order_id,
-    customer: `${order.customer_name} (${order.customer_phone})`,
-    amount: order.final_amount,
-    items: order.order_items.map(item => 
-      `${item.product_name} x${item.quantity} (${item.grind_option})`
-    ).join('\n'),
-    notes: order.notes || '無'
-  }
-};
+#### Workflow 流程圖
+
+```mermaid
+flowchart LR
+    A[Webhook<br/>接收訂單] --> B[Function<br/>格式化數據]
+    B --> C[Gmail<br/>發送 Email]
+    
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#e8f5e9
 ```
-4. 新增 **Split In Batches** 節點（處理多個通知）
-5. 新增並行節點：
-   - **LINE Notify**：發送即時通知給賣家
-   - **Email (SendGrid/Mailgun)**：發送詳細訂單給賣家
-   - **Email**：發送訂單確認信給買家
+
+#### 步驟 1：建立新 Workflow
+
+1. 在 N8N 中點擊「Add Workflow」
+2. 命名為「訂單建立 - Gmail 通知」
+3. 點擊「Save」儲存
+
+#### 步驟 2：設定 Webhook 節點
+
+1. **新增 Webhook 節點**
+   - 從左側節點列表拖拽「Webhook」節點到畫布
+   - 雙擊節點開啟設定
+
+2. **配置 Webhook 設定**
+   - **HTTP Method**: 選擇 `POST`
+   - **Path**: 輸入 `/order-created`
+   - **Response Mode**: 選擇 `Respond When Last Node Finishes`
+   - **Authentication**: 選擇 `None`（如果使用 Webhook Secret，選擇 `Header Auth`）
+
+3. **取得 Webhook URL**
+   - 點擊「Execute Node」按鈕
+   - 複製顯示的 Webhook URL，格式為：
+     ```
+     https://qwerboy.app.n8n.cloud/webhook/order-created
+     ```
+   - 將此 URL 設定到系統環境變數 `N8N_WEBHOOK_URL`
+
+4. **Webhook Secret（可選）**
+   - 如果系統設定了 `N8N_WEBHOOK_SECRET`，需要在 Webhook 節點中驗證
+   - 在「Authentication」中選擇「Header Auth」
+   - Header Name: `X-Webhook-Secret`
+   - Header Value: 與系統環境變數中的 `N8N_WEBHOOK_SECRET` 相同
+
+#### 步驟 3：設定 Function 節點（數據格式化）
+
+1. **新增 Function 節點**
+   - 從左側節點列表拖拽「Code」節點到畫布
+   - 將 Webhook 節點的輸出連接到 Function 節點
+   - 雙擊節點開啟設定
+
+2. **設定 Code 節點執行模式**
+
+   在 Code 節點的設定中，找到「Mode」選項：
+   - 選擇 **「Run Once for All Items」**（為所有項目執行一次）
+   - 這會讓 `items` 變數可用
+
+3. **輸入以下 JavaScript 代碼**
+
+```javascript
+// 取得訂單數據
+// 方法 1：如果使用 "Run Once for All Items" 模式
+const order = items[0].json;
+
+// 方法 2：如果使用 "Run Once for Each Item" 模式（備用方案）
+// const order = $input.item.json;
+
+// 轉換函數：取件方式
+function formatPickupMethod(method) {
+  const map = {
+    'self_pickup': '自取',
+    'delivery': '外送'
+  };
+  return map[method] || method;
+}
+
+// 轉換函數：付款方式
+function formatPaymentMethod(method) {
+  const map = {
+    'cash': '現金',
+    'transfer': '轉帳',
+    'credit_card': '信用卡'
+  };
+  return map[method] || method;
+}
+
+// 轉換函數：研磨選項
+function formatGrindOption(option) {
+  const map = {
+    'none': '不磨',
+    'hand_drip': '磨手沖',
+    'espresso': '磨義式'
+  };
+  return map[option] || option;
+}
+
+// 格式化金額
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('zh-TW', {
+    style: 'currency',
+    currency: 'TWD',
+    minimumFractionDigits: 0
+  }).format(amount);
+}
+
+// 處理訂單明細
+const orderItems = order.order_items.map((item, index) => {
+  const subtotal = item.quantity * item.unit_price;
+  return {
+    index: index + 1,
+    product_name: item.product_name,
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    grind_option: formatGrindOption(item.grind_option),
+    subtotal: subtotal,
+    subtotal_formatted: formatCurrency(subtotal)
+  };
+});
+
+// 計算總計
+const totalItems = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+// 返回格式化後的數據（N8N 需要返回數組格式）
+return [{
+  json: {
+    // 訂單基本資訊
+    order_id: order.order_id,
+    customer_name: order.customer_name,
+    customer_phone: order.customer_phone,
+    customer_email: order.customer_email,
+    
+    // 訂單詳情
+    pickup_method: formatPickupMethod(order.pickup_method),
+    payment_method: formatPaymentMethod(order.payment_method),
+    total_amount: order.total_amount,
+    total_amount_formatted: formatCurrency(order.total_amount),
+    final_amount: order.final_amount,
+    final_amount_formatted: formatCurrency(order.final_amount),
+    
+    // 訂單明細
+    order_items: orderItems,
+    order_items_count: orderItems.length,
+    
+    // 備註
+    notes: order.notes || '無',
+    
+    // 用於 Email 的格式化字串
+    items_text: orderItems.map(item => 
+      `${item.index}. ${item.product_name} x${item.quantity} (${item.grind_option}) - ${item.subtotal_formatted}`
+    ).join('\n'),
+    
+    // 用於 HTML Email 的表格行
+    items_html: orderItems.map(item => `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.product_name}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">${item.subtotal_formatted}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.grind_option}</td>
+      </tr>
+    `).join('')
+  }
+}];
+```
+
+**重要說明：**
+- **執行模式設定**：Code 節點有兩種執行模式：
+  - **「Run Once for All Items」**（推薦）：使用 `items[0].json` 取得第一個輸入項目
+  - **「Run Once for Each Item」**：使用 `$input.item.json` 取得當前項目
+- **如果出現「Cannot find name 'items'」錯誤**：
+  - 確認 Code 節點的「Mode」設定為「Run Once for All Items」
+  - 或者將代碼中的 `items[0].json` 改為 `$input.item.json`（如果使用「Run Once for Each Item」模式）
+- **返回格式**：必須返回一個數組，每個元素包含 `json` 屬性
+- **除錯**：可以使用 `console.log(order)` 來檢查數據，輸出會顯示在 N8N 的執行日誌中
+
+3. **儲存 Function 節點**
+   - 點擊「Save」儲存設定
+
+#### 步驟 4：設定 Gmail 節點
+
+1. **新增 Gmail 節點**
+   - 從左側節點列表拖拽「Gmail」節點到畫布
+   - 將 Function 節點的輸出連接到 Gmail 節點
+   - 雙擊節點開啟設定
+
+2. **Gmail OAuth 認證設定**
+
+   **方法 A：使用 N8N Cloud 內建的 Gmail 認證（推薦）**
+   
+   - 在 Gmail 節點中，點擊「Credential」旁的「Create New」
+   - 選擇「Gmail OAuth2 API」
+   - 點擊「Connect my account」
+   - 選擇要使用的 Gmail 帳號
+   - 授權 N8N 存取您的 Gmail
+   - 完成後，認證會自動儲存
+
+   **方法 B：使用自訂 Gmail API 憑證**
+   
+   如果需要使用自訂的 Gmail API 憑證：
+   
+   1. 前往 [Google Cloud Console](https://console.cloud.google.com/)
+   2. 建立新專案或選擇現有專案
+   3. 啟用 Gmail API：
+      - 前往「APIs & Services」→「Library」
+      - 搜尋「Gmail API」
+      - 點擊「Enable」
+   4. 建立 OAuth 2.0 憑證：
+      - 前往「APIs & Services」→「Credentials」
+      - 點擊「Create Credentials」→「OAuth client ID」
+      - 應用程式類型選擇「Web application」
+      - 授權重新導向 URI：`https://qwerboy.app.n8n.cloud/rest/oauth2-credential/callback`
+      - 複製「Client ID」和「Client Secret」
+   5. 在 N8N 中設定：
+      - 在 Gmail 節點中建立新認證
+      - 選擇「Gmail OAuth2 API」
+      - 輸入 Client ID 和 Client Secret
+      - 完成 OAuth 流程
+
+3. **配置 Email 設定**
+
+   - **Operation**: 選擇 `Send Email`
+   - **From Email**: 選擇您的 Gmail 地址（或使用 `{{ $json.customer_email }}` 從訂單數據取得）
+   - **To Email**: 輸入您要接收通知的 Gmail 地址（例如：`your-email@gmail.com`）
+   - **Subject**: 輸入以下內容：
+     ```
+     新訂單通知 - {{ $json.order_id }}
+     ```
+   - **Email Type**: 選擇 `HTML`
+   - **Message**: 輸入以下 HTML 內容（見下方 Email 範本）
+
+4. **Email 範本（HTML 格式）**
+
+   在 Gmail 節點的「Message」欄位中貼上以下 HTML：
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #8B4513; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+    .content { background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; }
+    .section { margin-bottom: 20px; }
+    .section-title { font-weight: bold; color: #8B4513; margin-bottom: 10px; font-size: 16px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th { background-color: #8B4513; color: white; padding: 10px; text-align: left; }
+    td { padding: 8px; border-bottom: 1px solid #ddd; }
+    .total { font-size: 18px; font-weight: bold; color: #8B4513; text-align: right; margin-top: 10px; }
+    .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>☕ 新訂單通知</h1>
+    </div>
+    <div class="content">
+      <div class="section">
+        <div class="section-title">訂單編號</div>
+        <div>{{ $json.order_id }}</div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">客戶資訊</div>
+        <div><strong>姓名：</strong>{{ $json.customer_name }}</div>
+        <div><strong>電話：</strong>{{ $json.customer_phone }}</div>
+        <div><strong>Email：</strong>{{ $json.customer_email }}</div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">訂單詳情</div>
+        <div><strong>取件方式：</strong>{{ $json.pickup_method }}</div>
+        <div><strong>付款方式：</strong>{{ $json.payment_method }}</div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">商品清單</div>
+        <table>
+          <thead>
+            <tr>
+              <th>商品名稱</th>
+              <th style="text-align: center;">數量</th>
+              <th style="text-align: right;">小計</th>
+              <th>研磨選項</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{ $json.items_html }}
+          </tbody>
+        </table>
+        <div class="total">總計：{{ $json.final_amount_formatted }}</div>
+      </div>
+      
+      {{#if $json.notes }}
+      <div class="section">
+        <div class="section-title">備註</div>
+        <div>{{ $json.notes }}</div>
+      </div>
+      {{/if}}
+    </div>
+    <div class="footer">
+      <p>此為自動發送的訂單通知，請勿直接回覆此郵件。</p>
+      <p>訂單時間：{{ $now }}</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+5. **Email 範本（純文字格式 - 備用）**
+
+   如果需要純文字格式作為備用，可以在 Gmail 節點中新增一個「Plain Text」欄位：
+
+```
+新訂單通知
+==========
+
+訂單編號：{{ $json.order_id }}
+
+客戶資訊
+--------
+姓名：{{ $json.customer_name }}
+電話：{{ $json.customer_phone }}
+Email：{{ $json.customer_email }}
+
+訂單詳情
+--------
+取件方式：{{ $json.pickup_method }}
+付款方式：{{ $json.payment_method }}
+
+商品清單
+--------
+{{ $json.items_text }}
+
+總計：{{ $json.final_amount_formatted }}
+
+{{#if $json.notes }}
+備註
+----
+{{ $json.notes }}
+{{/if}}
+
+---
+此為自動發送的訂單通知
+訂單時間：{{ $now }}
+```
+
+6. **儲存 Gmail 節點**
+   - 點擊「Save」儲存設定
+
+#### 步驟 5：啟用 Workflow
+
+1. 點擊 Workflow 右上角的「Inactive」開關，切換為「Active」
+2. Workflow 現在會監聽來自系統的 Webhook 請求
+
+#### 步驟 6：測試 Workflow
+
+1. **測試 Webhook**
+   - 在 Webhook 節點中點擊「Test URL」
+   - 複製顯示的 Webhook URL
+   - 使用以下 curl 命令測試（或使用 Postman）：
+   
+   ```bash
+   curl -X POST https://qwerboy.app.n8n.cloud/webhook/order-created \
+     -H "Content-Type: application/json" \
+     -d '{
+       "order_id": "ORD-20251228-TEST",
+       "customer_name": "測試客戶",
+       "customer_phone": "0987654321",
+       "customer_email": "test@example.com",
+       "pickup_method": "self_pickup",
+       "payment_method": "cash",
+       "total_amount": 1500,
+       "final_amount": 1500,
+       "order_items": [
+         {
+           "product_name": "耶加雪菲",
+           "quantity": 2,
+           "unit_price": 500,
+           "grind_option": "hand_drip"
+         },
+         {
+           "product_name": "藍山咖啡",
+           "quantity": 1,
+           "unit_price": 500,
+           "grind_option": "none"
+         }
+       ],
+       "notes": "測試訂單"
+     }'
+   ```
+
+2. **檢查執行結果**
+   - 在 N8N 中查看 Workflow 執行歷史
+   - 確認每個節點都顯示綠色（成功）
+   - 檢查 Gmail 節點的輸出，確認 Email 已發送
+
+3. **驗證 Email**
+   - 檢查您的 Gmail 收件匣
+   - 確認收到格式化的訂單通知 Email
+   - 檢查 Email 內容是否正確顯示所有訂單資訊
+
+#### 常見問題排除
+
+**Q: Webhook 沒有收到請求**
+- 檢查系統環境變數 `N8N_WEBHOOK_URL` 是否正確設定
+- 確認 Workflow 已啟用（Active 狀態）
+- 檢查 Webhook URL 路徑是否為 `/order-created`
+
+**Q: Gmail 認證失敗**
+- 確認已正確完成 OAuth 授權流程
+- 檢查 Gmail API 是否已啟用
+- 確認使用的 Gmail 帳號有發送郵件的權限
+
+**Q: Email 格式顯示異常**
+- 檢查 HTML 範本中的變數名稱是否正確（使用 `{{ $json.xxx }}`）
+- 確認 Function 節點正確輸出了所有需要的欄位
+- 測試時可以在 Gmail 節點前添加「Set」節點來檢查數據
+
+**Q: Email 沒有發送**
+- 檢查 Gmail 節點的「To Email」欄位是否正確設定
+- 確認 Gmail 認證沒有過期（重新授權）
+- 檢查 N8N 執行日誌中的錯誤訊息
+
+#### 進階設定（可選）
+
+如果需要同時發送通知到多個 Email 地址：
+
+1. 在 Gmail 節點後新增「Split In Batches」節點
+2. 在「Split In Batches」後新增多個 Gmail 節點
+3. 每個 Gmail 節點設定不同的收件人地址
+
+如果需要根據訂單金額發送不同格式的 Email：
+
+1. 在 Function 節點後新增「IF」節點
+2. 設定條件（例如：`{{ $json.final_amount }} > 1000`）
+3. 根據條件連接不同的 Gmail 節點
 
 ### 3. 建立 Workflow 2：訂單狀態更新流程
 
@@ -319,6 +732,19 @@ https://your-n8n-instance.com/webhook/order-created
 https://your-n8n-instance.com/webhook/order-status-updated
 ```
 
+**範例：**
+如果您的 N8N 實例是 `qwerboy.app.n8n.cloud`，則 Webhook URL 為：
+```
+https://qwerboy.app.n8n.cloud/webhook/order-created
+```
+
+**重要：** 在系統環境變數中設定 `N8N_WEBHOOK_URL` 時，只需要設定基礎 URL（不包含路徑）：
+```env
+N8N_WEBHOOK_URL=https://qwerboy.app.n8n.cloud/webhook
+```
+
+系統會自動在路徑後加上 `/order-created` 或 `/order-status-updated`。
+
 ## 三、環境變數設定
 
 建立 `.env.local` 檔案：
@@ -329,7 +755,7 @@ AIRTABLE_API_KEY=patxxxxxxxxxxxxx
 AIRTABLE_BASE_ID=appxxxxxxxxxxxxx
 
 # N8N
-N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook
+N8N_WEBHOOK_URL=https://qwerboy.app.n8n.cloud/webhook
 N8N_WEBHOOK_SECRET=your_secret_key
 
 # LINE Notify (可選)
