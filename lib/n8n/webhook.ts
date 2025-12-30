@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
+const N8N_WEBHOOK_URL_STATUS_UPDATE = process.env.N8N_WEBHOOK_URL_STATUS_UPDATE;
 const N8N_WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET;
 
 export interface OrderWebhookPayload {
@@ -45,22 +46,37 @@ export async function triggerOrderCreatedWebhook(
       headers['X-Webhook-Secret'] = N8N_WEBHOOK_SECRET;
     }
 
-    await axios.post(`${N8N_WEBHOOK_URL}/order-created`, payload, {
+    // Check if N8N_WEBHOOK_URL is a complete webhook URL (contains /webhook/ with an ID)
+    // n8n Production URL format: https://qwerboy.app.n8n.cloud/webhook/[webhook-id]
+    // If it's a complete URL, use it directly; otherwise append /order-created
+    const isCompleteWebhookUrl = N8N_WEBHOOK_URL.includes('/webhook/') && 
+                                  !N8N_WEBHOOK_URL.endsWith('/webhook') &&
+                                  N8N_WEBHOOK_URL.split('/webhook/').length > 1 &&
+                                  N8N_WEBHOOK_URL.split('/webhook/')[1].length > 0;
+    
+    const webhookUrl = isCompleteWebhookUrl
+      ? N8N_WEBHOOK_URL
+      : `${N8N_WEBHOOK_URL}/order-created`;
+
+    await axios.post(webhookUrl, payload, {
       headers,
-      timeout: 10000, // 10秒超時
+      timeout: 10000, // 10 seconds timeout
     });
 
     console.log('Order created webhook triggered successfully');
   } catch (error) {
     console.error('Error triggering order created webhook:', error);
-    // 不拋出錯誤，避免影響訂單建立流程
+    // Do not throw error to avoid affecting order creation process
   }
 }
 
 export async function triggerStatusUpdatedWebhook(
   payload: StatusUpdateWebhookPayload
 ): Promise<void> {
-  if (!N8N_WEBHOOK_URL) {
+  // Use separate webhook URL for status updates if provided, otherwise use the main one
+  const webhookUrlEnv = N8N_WEBHOOK_URL_STATUS_UPDATE || N8N_WEBHOOK_URL;
+  
+  if (!webhookUrlEnv) {
     console.warn('N8N_WEBHOOK_URL is not set, skipping webhook');
     return;
   }
@@ -74,7 +90,19 @@ export async function triggerStatusUpdatedWebhook(
       headers['X-Webhook-Secret'] = N8N_WEBHOOK_SECRET;
     }
 
-    await axios.post(`${N8N_WEBHOOK_URL}/order-status-updated`, payload, {
+    // Check if webhook URL is a complete webhook URL (contains /webhook/ with an ID)
+    // n8n Production URL format: https://qwerboy.app.n8n.cloud/webhook/[webhook-id]
+    // If it's a complete URL, use it directly; otherwise append /order-status-updated
+    const isCompleteWebhookUrl = webhookUrlEnv.includes('/webhook/') && 
+                                  !webhookUrlEnv.endsWith('/webhook') &&
+                                  webhookUrlEnv.split('/webhook/').length > 1 &&
+                                  webhookUrlEnv.split('/webhook/')[1].length > 0;
+    
+    const webhookUrl = isCompleteWebhookUrl
+      ? webhookUrlEnv
+      : `${webhookUrlEnv}/order-status-updated`;
+
+    await axios.post(webhookUrl, payload, {
       headers,
       timeout: 10000,
     });
@@ -82,7 +110,7 @@ export async function triggerStatusUpdatedWebhook(
     console.log('Status updated webhook triggered successfully');
   } catch (error) {
     console.error('Error triggering status updated webhook:', error);
-    // 不拋出錯誤，避免影響狀態更新流程
+    // Do not throw error to avoid affecting status update process
   }
 }
 
