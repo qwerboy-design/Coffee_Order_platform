@@ -12,7 +12,8 @@ function generateOrderId(): string {
   return `ORD-${dateStr}-${randomStr}`;
 }
 
-export async function createOrder(data: CreateOrderRequest): Promise<Order> {try {
+export async function createOrder(data: CreateOrderRequest): Promise<Order> {
+  try {
     // 1. 建�??�更?�客??const customer = await createOrUpdateCustomer({
       name: data.customer_name,
       phone: data.customer_phone,
