@@ -2,11 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['dl.airtable.com'],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.airtable.com',
+        hostname: '**.supabase.co',
       },
     ],
   },
@@ -36,6 +35,3 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
-
-
-

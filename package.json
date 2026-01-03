@@ -6,19 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "migrate:check": "tsx scripts/migration/check-env.ts",
-    "migrate:all": "tsx scripts/migration/migrate-all.ts",
-    "migrate:products": "tsx scripts/migration/migrate-products.ts",
-    "migrate:customers": "tsx scripts/migration/migrate-customers.ts",
-    "migrate:orders": "tsx scripts/migration/migrate-orders.ts",
-    "migrate:validate": "tsx scripts/migration/validate-migration.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
     "@supabase/supabase-js": "^2.89.0",
     "@types/bcryptjs": "^2.4.6",
-    "airtable": "^0.12.2",
     "axios": "^1.6.8",
     "bcryptjs": "^3.0.3",
     "date-fns": "^3.3.1",
@@ -38,12 +31,10 @@
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "autoprefixer": "^10.4.17",
-    "dotenv": "^17.2.3",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.2.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
-    "tsx": "^4.21.0",
     "typescript": "^5.3.3"
   }
 }

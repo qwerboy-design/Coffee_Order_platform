@@ -12,10 +12,6 @@ const envSchema = z.object({
   // JWT Secret（至少 32 字元）
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
 
-  // Airtable（已存在，可選驗證）
-  AIRTABLE_API_KEY: z.string().optional(),
-  AIRTABLE_BASE_ID: z.string().optional(),
-
   // Next.js
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
@@ -40,8 +36,6 @@ try {
       RESEND_API_KEY: 'build-time-placeholder',
       RESEND_FROM_EMAIL: 'noreply@example.com',
       JWT_SECRET: 'build-time-placeholder-32-chars-minimum',
-      AIRTABLE_API_KEY: undefined,
-      AIRTABLE_BASE_ID: undefined,
       NODE_ENV: 'development',
       NEXT_PUBLIC_APP_URL: undefined,
     } as z.infer<typeof envSchema>;
@@ -74,4 +68,3 @@ export const config = {
   isProduction: env.NODE_ENV === 'production',
   isDevelopment: env.NODE_ENV === 'development',
 } as const;
-
