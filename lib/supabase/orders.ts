@@ -324,7 +324,6 @@ function mapOrderRecord(orderRecord: any, itemsRecords: any[]): Order {
   return {
     id: orderRecord.id,
     order_id: orderRecord.order_id,
-    customer_id: orderRecord.customer_id,
     customer_name: orderRecord.customer_name,
     customer_phone: orderRecord.customer_phone,
     customer_email: orderRecord.customer_email,
