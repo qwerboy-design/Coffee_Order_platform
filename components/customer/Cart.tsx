@@ -3,36 +3,9 @@
 import { useCart } from '@/hooks/useCart';
 import { formatCurrency, formatGrindOption } from '@/lib/utils/format';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
 
 export default function Cart() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCart();
-  const cartRef = useRef<HTMLDivElement>(null);
-  
-  // #region agent log
-  useEffect(() => {
-    if (typeof window !== 'undefined' && cartRef.current) {
-      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const computedStyles = window.getComputedStyle(cartRef.current);
-      const bgColor = computedStyles.backgroundColor;
-      const color = computedStyles.color;
-      
-      // 檢查各個元素的顏色
-      const titleEl = cartRef.current.querySelector('h2');
-      const priceEl = cartRef.current.querySelector('.text-amber-600');
-      const quantityEl = cartRef.current.querySelector('span.w-12');
-      const totalEl = cartRef.current.querySelector('.bg-gray-100');
-      
-      const titleColor = titleEl ? window.getComputedStyle(titleEl).color : 'N/A';
-      const priceColor = priceEl ? window.getComputedStyle(priceEl).color : 'N/A';
-      const quantityColor = quantityEl ? window.getComputedStyle(quantityEl).color : 'N/A';
-      const totalBgColor = totalEl ? window.getComputedStyle(totalEl).backgroundColor : 'N/A';
-      const totalTextColor = totalEl ? window.getComputedStyle(totalEl).color : 'N/A';
-      
-      fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/customer/Cart.tsx:15',message:'Cart component color analysis',data:{isDarkMode,containerBg:bgColor,containerColor:color,titleColor,priceColor,priceElementExists:!!priceEl,quantityColor,quantityElementExists:!!quantityEl,totalBgColor,totalTextColor,itemsCount:items.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D,E'})}).catch(()=>{});
-    }
-  }, [items.length]);
-  // #endregion
 
   if (items.length === 0) {
     return (
@@ -49,7 +22,7 @@ export default function Cart() {
   }
 
   return (
-    <div ref={cartRef} className="space-y-4">
+    <div className="space-y-4">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">購物車</h2>
         <button
@@ -124,4 +97,3 @@ export default function Cart() {
     </div>
   );
 }
-

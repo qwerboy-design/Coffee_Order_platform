@@ -1,0 +1,20 @@
+{
+  // Cursor/VSCode 主題設置 - 深色主題
+  "workbench.colorTheme": "Default Dark+",
+  
+  // 確保深色主題在整個 UI 中生效
+  "window.autoDetectColorScheme": false,
+  
+  // 工作台顏色自定義
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#1e1e1e",
+    "statusBar.background": "#007acc",
+    "statusBar.foreground": "#ffffff",
+    "titleBar.activeBackground": "#1e1e1e",
+    "titleBar.activeForeground": "#ffffff",
+    "panel.background": "#1e1e1e",
+    "sideBar.background": "#252526",
+    "editor.background": "#1e1e1e"
+  }
+}
+

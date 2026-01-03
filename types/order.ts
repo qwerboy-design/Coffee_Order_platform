@@ -5,8 +5,8 @@ export type OrderStatus =
   | 'picked_up' 
   | 'cancelled';
 
-export type PickupMethod = 'self_pickup' | 'delivery';
-export type PaymentMethod = 'cash' | 'transfer' | 'credit_card';
+export type PickupMethod = 'self_pickup' | 'home_delivery';
+export type PaymentMethod = 'cash' | 'bank_transfer' | 'credit_card' | 'line_pay';
 export type GrindOption = 'none' | 'hand_drip' | 'espresso';
 
 export interface OrderItem {
@@ -42,9 +42,19 @@ export interface CreateOrderRequest {
   customer_email: string;
   pickup_method: PickupMethod;
   payment_method: PaymentMethod;
+  total_amount: number;
+  discount_amount?: number;
+  final_amount: number;
   order_items: Omit<OrderItem, 'subtotal'>[];
   notes?: string;
 }
+
+
+
+
+
+
+
 
 
 

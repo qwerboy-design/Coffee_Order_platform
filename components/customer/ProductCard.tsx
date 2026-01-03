@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import type { Product } from '@/types/product';
-import type { GrindOption } from '@/types/order';
+import type { GrindOption } from '@/types/product';
 import { useCart } from '@/hooks/useCart';
 import { useState } from 'react';
 import { formatCurrency } from '@/lib/utils/format';
@@ -12,9 +12,6 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // #region agent log
-  fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'components/customer/ProductCard.tsx:14',message:'ProductCard render with product (single-select)',data:{productId:product.id,grindOption:product.grind_option,grindOptionType:typeof product.grind_option},timestamp:Date.now(),sessionId:'debug-session',runId:'single-select',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   const [selectedGrind, setSelectedGrind] = useState<GrindOption>(
     product.grind_option || 'none'
   );
@@ -116,4 +113,3 @@ export default function ProductCard({ product }: ProductCardProps) {
     </div>
   );
 }
-

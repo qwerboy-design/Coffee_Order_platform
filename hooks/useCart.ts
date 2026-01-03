@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { Product } from '@/types/product';
 import type { GrindOption } from '@/types/order';
 
@@ -20,8 +21,10 @@ interface CartStore {
   getItemCount: () => number;
 }
 
-export const useCart = create<CartStore>((set, get) => ({
-  items: [],
+export const useCart = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
 
   addItem: (product, quantity, grind_option) => {
     set((state) => {
@@ -80,7 +83,20 @@ export const useCart = create<CartStore>((set, get) => ({
   getItemCount: () => {
     return get().items.reduce((sum, item) => sum + item.quantity, 0);
   },
-}));
+    }),
+    {
+      name: 'cart-storage',
+      version: 1,
+    }
+  )
+);
+
+
+
+
+
+
+
 
 
 

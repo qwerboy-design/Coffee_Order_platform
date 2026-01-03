@@ -1,5 +1,5 @@
 import base, { TABLES } from './client';
-import type { Customer, CreateCustomerRequest } from '@/types/customer';
+import type { Customer, CreateCustomerRequest, AuthProvider } from '@/types/customer';
 
 export async function getCustomerByPhone(phone: string): Promise<Customer | null> {
   try {
@@ -27,6 +27,40 @@ export async function getCustomerByPhone(phone: string): Promise<Customer | null
     };
   } catch (error) {
     console.error('Error fetching customer:', error);
+    return null;
+  }
+}
+
+export async function findCustomerByEmail(email: string): Promise<Customer | null> {
+  try {
+    const records = await base(TABLES.CUSTOMERS)
+      .select({
+        filterByFormula: `{email} = "${email.toLowerCase()}"`,
+        maxRecords: 1,
+      })
+      .all();
+
+    if (records.length === 0) {
+      return null;
+    }
+
+    const record = records[0];
+    return {
+      id: record.id,
+      name: record.get('name') as string,
+      phone: record.get('phone') as string,
+      email: record.get('email') as string,
+      password_hash: record.get('password_hash') as string | undefined,
+      auth_provider: record.get('auth_provider') as AuthProvider | undefined,
+      email_verified: record.get('email_verified') as boolean | undefined,
+      last_login_at: record.get('last_login_at') as string | undefined,
+      total_orders: record.get('total_orders') as number | undefined,
+      total_spent: record.get('total_spent') as number | undefined,
+      last_order_date: record.get('last_order_date') as string | undefined,
+      created_at: record.get('created_at') as string | undefined,
+    };
+  } catch (error) {
+    console.error('Error fetching customer by email:', error);
     return null;
   }
 }
@@ -75,11 +109,21 @@ export async function createOrUpdateCustomer(
       // #region agent log
       fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:60',message:'Before create customer',data:{tableName:TABLES.CUSTOMERS},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
       // #endregion
-      const record = await base(TABLES.CUSTOMERS).create({
+      const createData: any = {
         name: data.name,
         phone: data.phone,
         email: data.email,
-      });
+      };
+      
+      // 如果有密碼，則新增密碼相關欄位
+      if (data.password) {
+        createData.password_hash = data.password; // 注意：這裡應該傳入已加密的密碼
+      }
+      if (data.auth_provider) {
+        createData.auth_provider = data.auth_provider;
+      }
+      
+      const record = await base(TABLES.CUSTOMERS).create(createData);
       // #region agent log
       fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:67',message:'Customer created successfully',data:{recordId:record.id},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
       // #endregion
@@ -126,6 +170,71 @@ export async function createOrUpdateCustomer(
     }
     
     throw new Error(`Failed to create/update customer: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * 建立帶密碼的客戶（用於密碼註冊）
+ * @param data 客戶資料（包含已加密的密碼）
+ * @returns 客戶記錄
+ */
+export async function createCustomerWithPassword(
+  data: CreateCustomerRequest & { password_hash: string }
+): Promise<Customer> {
+  try {
+    // 檢查 Email 是否已存在
+    const existing = await findCustomerByEmail(data.email);
+    if (existing) {
+      throw new Error('此 Email 已被註冊');
+    }
+
+    // 檢查電話是否已存在
+    const existingPhone = await getCustomerByPhone(data.phone);
+    if (existingPhone) {
+      throw new Error('此電話已被使用');
+    }
+
+    const record = await base(TABLES.CUSTOMERS).create({
+      name: data.name,
+      phone: data.phone,
+      email: data.email.toLowerCase(),
+      password_hash: data.password_hash,
+      auth_provider: data.auth_provider || 'email',
+      email_verified: false,
+    });
+
+    return {
+      id: record.id,
+      name: record.get('name') as string,
+      phone: record.get('phone') as string,
+      email: record.get('email') as string,
+      password_hash: record.get('password_hash') as string | undefined,
+      auth_provider: record.get('auth_provider') as AuthProvider | undefined,
+      email_verified: record.get('email_verified') as boolean | undefined,
+      last_login_at: record.get('last_login_at') as string | undefined,
+      total_orders: record.get('total_orders') as number | undefined,
+      total_spent: record.get('total_spent') as number | undefined,
+      last_order_date: record.get('last_order_date') as string | undefined,
+      created_at: record.get('created_at') as string | undefined,
+    };
+  } catch (error) {
+    console.error('Error creating customer with password:', error);
+    throw error;
+  }
+}
+
+/**
+ * 更新客戶最後登入時間
+ * @param customerId 客戶 ID
+ */
+export async function updateLastLogin(customerId: string): Promise<void> {
+  try {
+    await base(TABLES.CUSTOMERS).update(customerId, {
+      last_login_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error updating last login:', error);
+    // 不拋出錯誤，因為這不是關鍵操作
   }
 }
 

@@ -1,6 +1,6 @@
 # 咖啡豆訂單系統
 
-全自動化咖啡豆訂購平台，整合 Next.js、Airtable 與 N8N 自動化流程。
+全自動化咖啡豆訂購平台，整合 Next.js、Supabase 與 N8N 自動化流程。
 
 ## 功能特色
 
@@ -13,7 +13,7 @@
 ## 技術棧
 
 - **前端框架**: Next.js 14 (App Router)
-- **資料庫**: Airtable
+- **資料庫**: Supabase (PostgreSQL)
 - **自動化**: N8N
 - **樣式**: Tailwind CSS
 - **狀態管理**: Zustand
@@ -32,42 +32,52 @@ npm install
 複製 `.env.example` 並建立 `.env.local`，填入以下資訊：
 
 ```env
-# Airtable
-AIRTABLE_API_KEY=your_api_key
-AIRTABLE_BASE_ID=your_base_id
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # N8N
 N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook
 N8N_WEBHOOK_SECRET=your_webhook_secret
 
-# LINE Notify (可選)
-LINE_NOTIFY_TOKEN=your_line_token
+# Email Service (Resend)
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=noreply@yourdomain.com
 
-# Email Service (可選)
-EMAIL_API_KEY=your_email_api_key
-EMAIL_FROM=noreply@yourdomain.com
+# JWT Session
+JWT_SECRET=your_32_character_secret_key
 
 # Next.js
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### 3. 設定 Airtable
+### 3. 設定 Supabase
 
-在 Airtable 建立 Base，包含以下 Table：
+#### 3.1 建立 Supabase 專案
 
-- **Products**: 商品資料
-- **Orders**: 訂單主檔
-- **Order Items**: 訂單明細
-- **Customers**: 客戶資料
-- **Order Status Log**: 訂單狀態歷程
+1. 前往 [Supabase](https://supabase.com) 註冊並建立新專案
+2. 記下專案的 URL 和 API Keys：
+   - Project URL（用於 `NEXT_PUBLIC_SUPABASE_URL`）
+   - Anon/Public Key（用於 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`）
+   - Service Role Key（用於 `SUPABASE_SERVICE_ROLE_KEY`）
+
+#### 3.2 執行資料庫遷移
+
+在 Supabase SQL Editor 中按順序執行以下遷移文件：
+
+1. `supabase/migrations/001_create_enums.sql` - 建立 ENUM 類型
+2. `supabase/migrations/002_create_tables.sql` - 建立資料表
+3. `supabase/migrations/003_create_triggers_and_functions.sql` - 建立觸發器和函數
+4. `supabase/migrations/004_create_rls_policies.sql` - 建立 RLS 政策（可選）
 
 **重要設定注意事項：**
-- 所有 Linked record 欄位必須正確連結到對應的表
-- `Order Items` 表的 `order` 欄位必須連結到 `Orders` 表
-- `Order Status Log` 表的 `order` 欄位必須連結到 `Orders` 表
-- Single select 欄位的選項值必須在 Airtable 界面中手動添加
+- 所有遷移文件必須按順序執行
+- 確保所有 ENUM 類型已建立
+- 確保所有外鍵關係正確設定
+- 確保所有 Trigger 和 RPC 函數已建立
 
-詳細欄位設計和設定步驟請參考 [SETUP.md](SETUP.md) 文件。
+詳細資料庫結構請參考 [DATABASE.md](DATABASE.md) 文件。
 
 ### 4. 設定 N8N
 
@@ -97,7 +107,7 @@ Coffee_Order_platform/
 │   ├── (customer)/        # 顧客端頁面
 │   ├── (admin)/           # 後台管理頁面
 │   └── api/               # API Routes
-│       ├── diagnostics/   # 診斷 API（用於檢查 Airtable 連線）
+│       ├── diagnostics/   # 診斷 API（用於檢查 Supabase 連線）
 │       ├── orders/        # 訂單 API
 │       └── products/       # 商品 API
 ├── components/            # React 元件
@@ -105,16 +115,18 @@ Coffee_Order_platform/
 │   ├── customer/          # 顧客端元件
 │   └── shared/            # 共用元件
 ├── lib/                   # 工具函數與配置
-│   ├── airtable/          # Airtable 操作
-│   │   ├── client.ts      # Airtable 客戶端配置
+│   ├── supabase/          # Supabase 操作
+│   │   ├── client.ts      # Supabase 客戶端配置
 │   │   ├── customers.ts   # 客戶資料操作
-│   │   ├── diagnostics.ts # 診斷工具
 │   │   ├── orders.ts      # 訂單操作
-│   │   └── products.ts    # 商品操作
+│   │   ├── products.ts    # 商品操作
+│   │   └── otp.ts         # OTP 驗證碼操作
+│   ├── auth/              # 認證相關
+│   │   ├── session.ts     # JWT Session 管理
+│   │   └── otp-generator.ts # OTP 生成器
 │   ├── n8n/               # N8N 整合
+│   ├── email/             # Email 服務 (Resend)
 │   ├── utils/             # 工具函數
-│   │   ├── format.ts      # 格式化函數（enum 轉換）
-│   │   └── order.ts       # 訂單相關工具
 │   └── validation/        # 資料驗證（Zod schemas）
 ├── types/                 # TypeScript 型別定義
 │   ├── customer.ts        # 客戶型別
@@ -126,13 +138,21 @@ Coffee_Order_platform/
 
 ## 資料庫結構
 
-系統使用 Airtable 作為資料庫，包含 5 個主要 Table：
+系統使用 Supabase (PostgreSQL) 作為資料庫，包含 6 個主要 Table：
 
-- **Products** - 商品資料表
-- **Orders** - 訂單主檔表
-- **Order Items** - 訂單明細表
-- **Customers** - 客戶資料表
-- **Order Status Log** - 訂單狀態歷程表
+- **products** - 商品資料表
+- **orders** - 訂單主檔表
+- **order_items** - 訂單明細表
+- **customers** - 客戶資料表
+- **order_status_log** - 訂單狀態歷程表
+- **otp_tokens** - OTP 驗證碼表
+
+**資料庫特色：**
+- 使用 PostgreSQL ENUM 類型確保資料一致性
+- 使用 UUID 作為主鍵
+- 使用外鍵約束維護資料完整性
+- 使用 Triggers 自動化業務邏輯（狀態記錄、統計更新等）
+- 使用 RPC 函數處理複雜操作（訂單編號生成、庫存扣減等）
 
 詳細的資料庫結構說明請參考 [DATABASE.md](DATABASE.md) 文件。
 
@@ -175,7 +195,11 @@ curl -X POST http://localhost:3000/api/products \
 1. 顧客瀏覽商品並加入購物車
 2. 填寫結帳資訊並送出訂單
 3. 系統自動：
-   - 寫入 Airtable
+   - 寫入 Supabase 資料庫
+   - 自動生成訂單編號（RPC 函數）
+   - 自動扣減庫存（RPC 函數）
+   - 自動記錄狀態變更（Trigger）
+   - 自動更新客戶統計（Trigger）
    - 觸發 N8N Webhook
    - 發送通知
 
@@ -199,16 +223,14 @@ Vercel 是部署 Next.js 應用的最佳選擇，提供原生支援和自動部�
 3. **設定環境變數**
    - 在「Environment Variables」區塊添加：
      ```
-     AIRTABLE_API_KEY=your_api_key
-     AIRTABLE_BASE_ID=your_base_id
+     NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_anon_key
+     SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+     RESEND_API_KEY=your_resend_api_key
+     RESEND_FROM_EMAIL=noreply@yourdomain.com
+     JWT_SECRET=your_32_character_secret_key
      N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook
      N8N_WEBHOOK_SECRET=your_webhook_secret
-     ```
-   - 可選環境變數：
-     ```
-     LINE_NOTIFY_TOKEN=your_line_token
-     EMAIL_API_KEY=your_email_api_key
-     EMAIL_FROM=noreply@yourdomain.com
      NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
      ```
 
@@ -248,8 +270,12 @@ vercel --prod
      - `VERCEL_TOKEN`
      - `VERCEL_ORG_ID`
      - `VERCEL_PROJECT_ID`
-     - `AIRTABLE_API_KEY`
-     - `AIRTABLE_BASE_ID`
+     - `NEXT_PUBLIC_SUPABASE_URL`
+     - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
+     - `SUPABASE_SERVICE_ROLE_KEY`
+     - `RESEND_API_KEY`
+     - `RESEND_FROM_EMAIL`
+     - `JWT_SECRET`
 
 3. 推送代碼到 `main` 分支即可自動部署
 
@@ -262,24 +288,29 @@ GitHub Pages 只支援靜態網站，無法運行 Next.js 的服務器端功能�
 - ✅ 環境變數管理
 - ✅ 自動構建和部署
 - ✅ 免費方案
+- ✅ 香港區域部署（hkg1）支援
 
 ### 環境變數
 
 確保在 Vercel Dashboard 的「Environment Variables」中設定所有必要的環境變數：
 
 **必填環境變數：**
-- `AIRTABLE_API_KEY` - Airtable API 金鑰
-- `AIRTABLE_BASE_ID` - Airtable Base ID
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase 專案 URL
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` - Supabase Anon/Public Key
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase Service Role Key（後端使用）
+- `RESEND_API_KEY` - Resend Email 服務 API Key
+- `RESEND_FROM_EMAIL` - 發送者 Email 地址
+- `JWT_SECRET` - JWT Session 密鑰（至少 32 字元）
 
 **可選環境變數：**
 - `N8N_WEBHOOK_URL` - N8N Webhook URL（用於訂單通知）
 - `N8N_WEBHOOK_SECRET` - N8N Webhook 密鑰
-- `LINE_NOTIFY_TOKEN` - LINE Notify Token（可選）
-- `EMAIL_API_KEY` - Email 服務 API Key（可選）
-- `EMAIL_FROM` - 發送者 Email（可選）
 - `NEXT_PUBLIC_APP_URL` - 應用程式公開 URL（用於生成連結）
 
-**注意：** 構建時環境變數可以為空，系統已處理此情況。運行時必須設定所有必填環境變數。
+**注意：** 
+- 構建時環境變數可以為空，系統已處理此情況
+- 運行時必須設定所有必填環境變數
+- `JWT_SECRET` 必須至少 32 字元，建議使用隨機字串生成器
 
 ## 授權
 
