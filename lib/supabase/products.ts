@@ -138,6 +138,47 @@ export async function checkMultipleProductsStock(
 }
 
 /**
+ * 建立新產品（Admin 功能）
+ */
+export async function createProduct(
+  productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>
+): Promise<Product> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from(TABLES.PRODUCTS)
+      .insert({
+        name: productData.name,
+        description: productData.description || null,
+        price: productData.price,
+        image_url: productData.image_url || null,
+        stock: productData.stock,
+        grind_option: productData.grind_option || 'whole_bean',
+        is_active: productData.is_active ?? true,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description || '',
+      price: parseFloat(data.price),
+      image_url: data.image_url || '',
+      stock: data.stock,
+      grind_option: data.grind_option,
+      is_active: data.is_active,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
+  } catch (error) {
+    console.error('Error creating product:', error);
+    throw new Error('建立產品失敗');
+  }
+}
+
+/**
  * 更新產品資料（Admin 功能）
  */
 export async function updateProduct(
