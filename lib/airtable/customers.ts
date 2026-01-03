@@ -68,31 +68,16 @@ export async function findCustomerByEmail(email: string): Promise<Customer | nul
 export async function createOrUpdateCustomer(
   data: CreateCustomerRequest
 ): Promise<Customer> {
-  // #region agent log
-  fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:34',message:'createOrUpdateCustomer entry',data:{customerName:data.name,customerPhone:data.phone,customerEmail:data.email,tableName:TABLES.CUSTOMERS},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
-  // #endregion
   try {
     // 先查詢是否已存在
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:39',message:'Before getCustomerByPhone',data:{phone:data.phone},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     const existing = await getCustomerByPhone(data.phone);
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:42',message:'getCustomerByPhone result',data:{existing:!!existing,existingId:existing?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
 
     if (existing) {
       // 更新現有客戶
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:45',message:'Before update customer',data:{customerId:existing.id,tableName:TABLES.CUSTOMERS},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       const record = await base(TABLES.CUSTOMERS).update(existing.id, {
         name: data.name,
         email: data.email,
       });
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:50',message:'Customer updated successfully',data:{recordId:record.id},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
 
       return {
         id: record.id,
@@ -106,10 +91,7 @@ export async function createOrUpdateCustomer(
       };
     } else {
       // 建立新客戶
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:60',message:'Before create customer',data:{tableName:TABLES.CUSTOMERS},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-      const createData: any = {
+      const createData: Record<string, unknown> = {
         name: data.name,
         phone: data.phone,
         email: data.email,
@@ -117,16 +99,14 @@ export async function createOrUpdateCustomer(
       
       // 如果有密碼，則新增密碼相關欄位
       if (data.password) {
-        createData.password_hash = data.password; // 注意：這裡應該傳入已加密的密碼
+        createData.password_hash = data.password;
       }
       if (data.auth_provider) {
         createData.auth_provider = data.auth_provider;
       }
       
-      const record = await base(TABLES.CUSTOMERS).create(createData);
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:67',message:'Customer created successfully',data:{recordId:record.id},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
+      const records = await base(TABLES.CUSTOMERS).create([{ fields: createData }]);
+      const record = records[0];
 
       return {
         id: record.id,
@@ -140,18 +120,9 @@ export async function createOrUpdateCustomer(
       };
     }
   } catch (error) {
-    // #region agent log
-    const errorData = error instanceof Error ? {
-      name: error.name,
-      message: error.message,
-      stack: error.stack?.substring(0, 500)
-    } : { error: String(error) };
-    const airtableError = error as any;
-    fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/customers.ts:77',message:'Error in createOrUpdateCustomer',data:{...errorData,airtableError:airtableError.error,airtableStatusCode:airtableError.statusCode,tableName:TABLES.CUSTOMERS},timestamp:Date.now(),sessionId:'debug-session',runId:'order-submit',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     console.error('Error creating/updating customer:', error);
+    const airtableError = error as { statusCode?: number };
     
-    // 提供更詳細的錯誤訊息
     if (airtableError?.statusCode === 403) {
       throw new Error(`無權限寫入 Airtable "${TABLES.CUSTOMERS}" 表。請確認：
 1. 您的 API Key 有寫入權限（不僅僅是讀取權限）
@@ -175,8 +146,6 @@ export async function createOrUpdateCustomer(
 
 /**
  * 建立帶密碼的客戶（用於密碼註冊）
- * @param data 客戶資料（包含已加密的密碼）
- * @returns 客戶記錄
  */
 export async function createCustomerWithPassword(
   data: CreateCustomerRequest & { password_hash: string }
@@ -194,14 +163,17 @@ export async function createCustomerWithPassword(
       throw new Error('此電話已被使用');
     }
 
-    const record = await base(TABLES.CUSTOMERS).create({
-      name: data.name,
-      phone: data.phone,
-      email: data.email.toLowerCase(),
-      password_hash: data.password_hash,
-      auth_provider: data.auth_provider || 'email',
-      email_verified: false,
-    });
+    const records = await base(TABLES.CUSTOMERS).create([{
+      fields: {
+        name: data.name,
+        phone: data.phone,
+        email: data.email.toLowerCase(),
+        password_hash: data.password_hash,
+        auth_provider: data.auth_provider || 'email',
+        email_verified: false,
+      }
+    }]);
+    const record = records[0];
 
     return {
       id: record.id,
@@ -225,7 +197,6 @@ export async function createCustomerWithPassword(
 
 /**
  * 更新客戶最後登入時間
- * @param customerId 客戶 ID
  */
 export async function updateLastLogin(customerId: string): Promise<void> {
   try {
@@ -234,7 +205,5 @@ export async function updateLastLogin(customerId: string): Promise<void> {
     });
   } catch (error) {
     console.error('Error updating last login:', error);
-    // 不拋出錯誤，因為這不是關鍵操作
   }
 }
-

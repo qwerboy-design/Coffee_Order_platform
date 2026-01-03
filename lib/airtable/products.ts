@@ -3,28 +3,16 @@ import type { Product, CreateProductRequest, UpdateProductRequest, GrindOption }
 import { diagnoseTable } from './diagnostics';
 
 export async function getProducts(activeOnly: boolean = true): Promise<Product[]> {
-  // #region agent log
-  fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/products.ts:5',message:'getProducts entry',data:{activeOnly,tableName:TABLES.PRODUCTS},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
   try {
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/products.ts:8',message:'Before base() call',data:{tableName:TABLES.PRODUCTS},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     const records = await base(TABLES.PRODUCTS)
       .select({
         filterByFormula: activeOnly ? '{is_active} = 1' : undefined,
         sort: [{ field: 'created_at', direction: 'desc' }],
       })
       .all();
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/products.ts:15',message:'After base() call success',data:{recordCount:records.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
 
     return records.map((record) => {
-      // #region agent log
       const rawGrindOption = record.get('grind_option') || record.get('grind_options');
-      fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/products.ts:23',message:'Raw grind_option from Airtable',data:{productId:record.id,productName:record.get('name'),rawGrindOption,rawType:typeof rawGrindOption,isArray:Array.isArray(rawGrindOption),isString:typeof rawGrindOption==='string',isNull:rawGrindOption===null,isUndefined:rawGrindOption===undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'single-select',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       
       // Convert to single GrindOption value
       let grindOption: GrindOption = 'none';
@@ -50,7 +38,7 @@ export async function getProducts(activeOnly: boolean = true): Promise<Product[]
         grindOption = rawGrindOption[0] as GrindOption;
       }
       
-      const product = {
+      return {
         id: record.id,
         name: record.get('name') as string,
         description: record.get('description') as string,
@@ -62,25 +50,11 @@ export async function getProducts(activeOnly: boolean = true): Promise<Product[]
         created_at: record.get('created_at') as string | undefined,
         updated_at: record.get('updated_at') as string | undefined,
       };
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/products.ts:50',message:'Product mapped with grind_option (single-select)',data:{productId:product.id,grindOption:product.grind_option,grindOptionType:typeof product.grind_option},timestamp:Date.now(),sessionId:'debug-session',runId:'single-select',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      return product;
     });
   } catch (error) {
-    // #region agent log
-    const errorData = error instanceof Error ? {
-      name: error.name,
-      message: error.message,
-      stack: error.stack?.substring(0, 200)
-    } : { error: String(error) };
-    const airtableError = error as any;
-    fetch('http://127.0.0.1:7244/ingest/a40b7c3c-59c4-467a-981c-58b903716aa6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/airtable/products.ts:28',message:'Error in getProducts',data:{...errorData,airtableError:airtableError.error,airtableStatusCode:airtableError.statusCode,tableName:TABLES.PRODUCTS},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A,B,C,D'})}).catch(()=>{});
-    // #endregion
-
     console.error('Error fetching products:', error);
+    const airtableError = error as { statusCode?: number };
     
-    // 提供更詳細的錯誤訊息和診斷
     if (airtableError?.statusCode === 404) {
       const diagnosis = await diagnoseTable(TABLES.PRODUCTS).catch(() => null);
       
@@ -145,15 +119,18 @@ export async function getProductById(id: string): Promise<Product | null> {
 
 export async function createProduct(data: CreateProductRequest): Promise<Product> {
   try {
-    const record = await base(TABLES.PRODUCTS).create({
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      image_url: data.image_url || '',
-      stock: data.stock,
-      grind_option: data.grind_option,
-      is_active: data.is_active ?? true,
-    });
+    const records = await base(TABLES.PRODUCTS).create([{
+      fields: {
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        image_url: data.image_url || '',
+        stock: data.stock,
+        grind_option: data.grind_option,
+        is_active: data.is_active ?? true,
+      }
+    }]);
+    const record = records[0];
 
     const rawGrindOption = record.get('grind_option');
     let grindOption: GrindOption = 'none';
@@ -194,7 +171,7 @@ export async function updateProduct(
   data: UpdateProductRequest
 ): Promise<Product> {
   try {
-    const updateFields: any = {};
+    const updateFields: Record<string, unknown> = {};
     if (data.name !== undefined) updateFields.name = data.name;
     if (data.description !== undefined) updateFields.description = data.description;
     if (data.price !== undefined) updateFields.price = data.price;
@@ -203,7 +180,7 @@ export async function updateProduct(
     if (data.grind_option !== undefined) updateFields.grind_option = data.grind_option;
     if (data.is_active !== undefined) updateFields.is_active = data.is_active;
 
-    const record = await base(TABLES.PRODUCTS).update(id, updateFields) as any;
+    const record = await base(TABLES.PRODUCTS).update(id, updateFields);
 
     const rawGrindOption = record.get('grind_option');
     let grindOption: GrindOption = 'none';
@@ -220,7 +197,7 @@ export async function updateProduct(
         grindOption = rawGrindOption as GrindOption;
       }
     } else if (Array.isArray(rawGrindOption) && rawGrindOption.length > 0) {
-      grindOption = rawGrindOption[0] as GrindOption;
+      grindOption = (rawGrindOption as string[])[0] as GrindOption;
     }
 
     return {
@@ -264,4 +241,3 @@ export async function updateProductStock(
     throw error;
   }
 }
-
