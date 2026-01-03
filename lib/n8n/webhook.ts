@@ -4,6 +4,48 @@ const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
 const N8N_WEBHOOK_URL_STATUS_UPDATE = process.env.N8N_WEBHOOK_URL_STATUS_UPDATE;
 const N8N_WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET;
 
+/**
+ * 將 grind_option 值轉換為中文顯示名稱
+ */
+export function formatGrindOptionForDisplay(grindOption: string): string {
+  const displayNames: Record<string, string> = {
+    // 資料庫 ENUM 值
+    'whole_bean': '原豆（不磨）',
+    'fine': '細研磨（手沖）',
+    'medium': '中研磨',
+    'coarse': '粗研磨（義式）',
+    // 前端值（以防萬一）
+    'none': '原豆（不磨）',
+    'hand_drip': '細研磨（手沖）',
+    'espresso': '粗研磨（義式）',
+  };
+  return displayNames[grindOption] || grindOption;
+}
+
+/**
+ * 將 pickup_method 值轉換為中文顯示名稱
+ */
+export function formatPickupMethodForDisplay(pickupMethod: string): string {
+  const displayNames: Record<string, string> = {
+    'self_pickup': '自取',
+    'home_delivery': '宅配',
+  };
+  return displayNames[pickupMethod] || pickupMethod;
+}
+
+/**
+ * 將 payment_method 值轉換為中文顯示名稱
+ */
+export function formatPaymentMethodForDisplay(paymentMethod: string): string {
+  const displayNames: Record<string, string> = {
+    'cash': '現金',
+    'bank_transfer': '銀行轉帳',
+    'credit_card': '信用卡',
+    'line_pay': 'LINE Pay',
+  };
+  return displayNames[paymentMethod] || paymentMethod;
+}
+
 export interface OrderWebhookPayload {
   order_id: string;
   customer_name: string;

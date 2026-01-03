@@ -52,3 +52,10 @@ export async function diagnoseAllTables(): Promise<Record<string, any>> {
 
 
 
+
+
+
+
+
+
+

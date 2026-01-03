@@ -47,5 +47,6 @@ export const TABLES = {
   ORDER_ITEMS: 'Order Items',
   CUSTOMERS: 'Customers',
   ORDER_STATUS_LOG: 'Order Status Log',
+  OTP_TOKENS: 'OTP Tokens',
 } as const;
 

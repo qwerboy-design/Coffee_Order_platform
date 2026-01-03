@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrderByOrderId } from '@/lib/airtable/orders';
+import { getOrderByOrderId } from '@/lib/supabase/orders';
 
 export async function GET(
   request: NextRequest,
@@ -24,6 +24,13 @@ export async function GET(
     );
   }
 }
+
+
+
+
+
+
+
 
 
 

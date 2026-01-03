@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrderById, updateOrderStatus } from '@/lib/airtable/orders';
+import { getOrderById, updateOrderStatus } from '@/lib/supabase/orders';
 import { updateOrderStatusSchema } from '@/lib/validation/schemas';
 import { triggerStatusUpdatedWebhook } from '@/lib/n8n/webhook';
 
@@ -69,6 +69,13 @@ export async function PATCH(
     );
   }
 }
+
+
+
+
+
+
+
 
 
 

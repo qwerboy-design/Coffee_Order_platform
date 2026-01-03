@@ -1,10 +1,10 @@
-'use client';
-
 import Link from 'next/link';
-import { useCart } from '@/hooks/useCart';
+import { getSession } from '@/lib/auth/session';
+import { UserMenu } from './UserMenu';
+import { HeaderClient } from './HeaderClient';
 
-export default function Header() {
-  const itemCount = useCart((state) => state.getItemCount());
+export default async function Header() {
+  const session = await getSession();
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -17,20 +17,22 @@ export default function Header() {
             <Link href="/" className="text-gray-700 hover:text-amber-600">
               商品
             </Link>
-            <Link
-              href="/cart"
-              className="relative text-gray-700 hover:text-amber-600"
-            >
-              購物車
-              {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {itemCount}
-                </span>
-              )}
-            </Link>
-            <Link href="/admin/orders" className="text-gray-700 hover:text-amber-600">
-              後台
-            </Link>
+            <HeaderClient />
+            {session ? (
+              <UserMenu user={{ email: session.email, name: session.email.split('@')[0] }} />
+            ) : (
+              <>
+                <Link href="/login" className="text-gray-700 hover:text-amber-600">
+                  登入
+                </Link>
+                <Link
+                  href="/register"
+                  className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors"
+                >
+                  註冊
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </div>
