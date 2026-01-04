@@ -23,7 +23,7 @@ const envSchema = z.object({
  */
 const isBuildTime =
   process.env.NEXT_PHASE === 'phase-production-build' ||
-  (process.env.NODE_ENV === 'production' && !process.env.VERCEL);
+  (process.env.NODE_ENV === 'production' && !process.env.VERCEL && !process.env.VERCEL_ENV);
 
 let env: z.infer<typeof envSchema>;
 
@@ -42,8 +42,20 @@ try {
   } else {
     // 運行時必須驗證通過
     if (error instanceof z.ZodError) {
-      const missingVars = error.errors.map((e) => `${e.path.join('.')}: ${e.message}`);
-      throw new Error(`環境變數驗證失敗：\n${missingVars.join('\n')}`);
+      const missingVars = error.errors.map((e) => {
+        const varName = e.path.join('.');
+        const varMessage = e.message;
+        // 提供更詳細的錯誤訊息，特別是針對 Vercel 部署
+        if (process.env.VERCEL) {
+          return `${varName}: ${varMessage}\n   → 請在 Vercel Dashboard → Settings → Environment Variables 中設定 ${varName}`;
+        }
+        return `${varName}: ${varMessage}`;
+      });
+      const errorMessage = `環境變數驗證失敗：\n${missingVars.join('\n')}\n\n` +
+        (process.env.VERCEL 
+          ? '請前往 Vercel Dashboard → Settings → Environment Variables 設定所有必要的環境變數。'
+          : '請在 .env.local 文件中設定所有必要的環境變數。');
+      throw new Error(errorMessage);
     }
     throw error;
   }
