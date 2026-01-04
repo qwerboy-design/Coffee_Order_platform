@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-import { config as appConfig } from './lib/config';
+import { config as appConfig } from '@/lib/config';
 
 // 需要登入才能訪問的路由
 const protectedRoutes = ['/profile', '/orders', '/settings'];
@@ -33,6 +33,11 @@ export async function middleware(request: NextRequest) {
   // 如果已登入用戶訪問登入/註冊頁，重定向到首頁
   if (isAuthRoute && sessionCookie) {
     try {
+      // 檢查 JWT_SECRET 是否有效（不是構建時的佔位符）
+      if (!appConfig.jwt.secret || appConfig.jwt.secret.includes('placeholder')) {
+        // 構建時或環境變數未設定，允許訪問
+        return NextResponse.next();
+      }
       const secret = new TextEncoder().encode(appConfig.jwt.secret);
       await jwtVerify(sessionCookie, secret);
       // Session 有效，重定向到首頁
