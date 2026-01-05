@@ -65,13 +65,40 @@ export async function POST(request: NextRequest) {
     console.log('OTP verified successfully');
 
     // 3. 取得客戶資料
+    // 重要：使用與 OTP 相同的 email（已經是小寫）
     const normalizedEmail = email.toLowerCase().trim();
     console.log('Finding customer by email:', {
       originalEmail: email,
       normalizedEmail: normalizedEmail,
     });
     
-    const customer = await findCustomerByEmail(normalizedEmail);
+    // 先用標準查詢
+    let customer = await findCustomerByEmail(normalizedEmail);
+    
+    // 如果找不到，嘗試直接查詢資料庫（繞過可能的快取問題）
+    if (!customer) {
+      console.log('Customer not found with findCustomerByEmail, trying direct query...');
+      
+      // 直接查詢 Supabase
+      const { supabaseAdmin, TABLES } = require('@/lib/supabase/client');
+      const { data: directData, error: directError } = await supabaseAdmin
+        .from(TABLES.CUSTOMERS)
+        .select('*')
+        .ilike('email', normalizedEmail)  // 使用 ilike 進行不區分大小寫的查詢
+        .limit(1);
+      
+      if (directError) {
+        console.error('Direct query error:', directError);
+      } else if (directData && directData.length > 0) {
+        console.log('Found customer with direct query:', {
+          id: directData[0].id,
+          email: directData[0].email,
+        });
+        customer = directData[0];
+      } else {
+        console.log('Direct query also returned no results');
+      }
+    }
     
     if (!customer) {
       console.error('CRITICAL: Customer not found after OTP verification:', { 
@@ -80,20 +107,10 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
       });
       
-      // 嘗試用原始 email 再查一次（診斷用）
-      const customerWithOriginal = await findCustomerByEmail(email);
-      console.log('Retry with original email:', {
-        found: !!customerWithOriginal,
-        customer: customerWithOriginal ? {
-          id: customerWithOriginal.id,
-          email: customerWithOriginal.email
-        } : null
-      });
-      
       return NextResponse.json(
         createErrorResponse(
           AuthErrorCode.UNAUTHORIZED, 
-          '用戶不存在，請重新註冊'
+          '用戶不存在，請先註冊或使用其他 Email 登入'
         ),
         { status: 404 }
       );
