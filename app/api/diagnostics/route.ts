@@ -51,13 +51,97 @@ async function diagnoseSupabaseTables() {
   return results;
 }
 
+/**
+ * 檢查環境變數是否設定
+ */
+function checkEnvVariables() {
+  const vars = {
+    NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    RESEND_API_KEY: !!process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: !!process.env.RESEND_FROM_EMAIL,
+    JWT_SECRET: !!process.env.JWT_SECRET,
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: !!process.env.GOOGLE_CLIENT_SECRET,
+  };
+
+  const allSet = Object.values(vars).every(v => v);
+  const missing = Object.entries(vars)
+    .filter(([, v]) => !v)
+    .map(([k]) => k);
+
+  return { vars, allSet, missing };
+}
+
+/**
+ * 測試 Supabase Admin 客戶端
+ */
+async function testSupabaseAdmin() {
+  try {
+    // 測試是否可以寫入和讀取
+    const testEmail = `test-${Date.now()}@diagnostic.local`;
+    
+    // 嘗試建立測試客戶
+    const { data, error } = await supabaseAdmin
+      .from(TABLES.CUSTOMERS)
+      .insert({
+        email: testEmail,
+        name: 'Diagnostic Test',
+        phone: '0900000000',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return {
+        canWrite: false,
+        error: error.message,
+        hint: error.hint || null,
+      };
+    }
+
+    // 刪除測試資料
+    await supabaseAdmin
+      .from(TABLES.CUSTOMERS)
+      .delete()
+      .eq('id', data.id);
+
+    return {
+      canWrite: true,
+      message: 'Supabase Admin 客戶端運作正常',
+    };
+  } catch (error) {
+    return {
+      canWrite: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 export async function GET() {
   try {
-    const results = await diagnoseSupabaseTables();
+    // 1. 檢查環境變數
+    const envCheck = checkEnvVariables();
+    
+    // 2. 檢查資料表
+    const tables = await diagnoseSupabaseTables();
+    
+    // 3. 測試 Supabase Admin 寫入能力
+    const adminTest = await testSupabaseAdmin();
+
     return NextResponse.json({ 
-      success: true, 
-      data: results,
-      message: '診斷完成。請檢查每個 Table 的 exists 狀態。'
+      success: true,
+      environment: {
+        allEnvSet: envCheck.allSet,
+        missingEnvVars: envCheck.missing,
+        envStatus: envCheck.vars,
+      },
+      supabaseAdmin: adminTest,
+      tables,
+      message: envCheck.allSet 
+        ? '所有環境變數已設定。' 
+        : `缺少環境變數: ${envCheck.missing.join(', ')}`,
     });
   } catch (error) {
     console.error('Error running diagnostics:', error);
