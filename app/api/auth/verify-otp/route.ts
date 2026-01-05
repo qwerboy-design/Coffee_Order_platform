@@ -65,17 +65,30 @@ export async function POST(request: NextRequest) {
     console.log('OTP verified successfully');
 
     // 3. 取得客戶資料
-    console.log('Finding customer by email:', email);
-    const customer = await findCustomerByEmail(email);
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log('Finding customer by email:', {
+      originalEmail: email,
+      normalizedEmail: normalizedEmail,
+    });
+    
+    const customer = await findCustomerByEmail(normalizedEmail);
     
     if (!customer) {
-      console.error('Customer not found after OTP verification:', { email });
+      console.error('CRITICAL: Customer not found after OTP verification:', { 
+        email,
+        normalizedEmail,
+        timestamp: new Date().toISOString(),
+      });
       
-      // 這是一個嚴重的錯誤：OTP 驗證通過但找不到客戶
-      // 可能的原因：
-      // 1. 客戶記錄建立失敗但 OTP 仍然發送
-      // 2. Email 大小寫不一致
-      // 3. 客戶記錄被刪除
+      // 嘗試用原始 email 再查一次（診斷用）
+      const customerWithOriginal = await findCustomerByEmail(email);
+      console.log('Retry with original email:', {
+        found: !!customerWithOriginal,
+        customer: customerWithOriginal ? {
+          id: customerWithOriginal.id,
+          email: customerWithOriginal.email
+        } : null
+      });
       
       return NextResponse.json(
         createErrorResponse(
@@ -89,7 +102,8 @@ export async function POST(request: NextRequest) {
     console.log('Customer found:', {
       id: customer.id,
       email: customer.email,
-      name: customer.name
+      name: customer.name,
+      emailMatch: customer.email === normalizedEmail,
     });
 
     // 4. 建立 Session

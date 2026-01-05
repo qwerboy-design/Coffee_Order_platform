@@ -31,22 +31,40 @@ export async function getCustomerByPhone(phone: string): Promise<Customer | null
  */
 export async function findCustomerByEmail(email: string): Promise<Customer | null> {
   try {
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log('[findCustomerByEmail] Searching for:', {
+      originalEmail: email,
+      normalizedEmail,
+    });
+    
     const { data, error } = await supabaseAdmin
       .from(TABLES.CUSTOMERS)
       .select('*')
-      .eq('email', email.toLowerCase())
+      .eq('email', normalizedEmail)
       .single();
 
     if (error) {
       if (error.code === 'PGRST116') {
+        console.log('[findCustomerByEmail] Customer not found:', normalizedEmail);
         return null; // 找不到記錄
       }
+      console.error('[findCustomerByEmail] Supabase error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       throw error;
     }
 
+    console.log('[findCustomerByEmail] Customer found:', {
+      id: data.id,
+      email: data.email,
+    });
+    
     return mapCustomerRecord(data);
   } catch (error) {
-    console.error('Error fetching customer by email:', error);
+    console.error('[findCustomerByEmail] Error:', error);
     return null;
   }
 }

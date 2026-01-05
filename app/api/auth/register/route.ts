@@ -58,16 +58,41 @@ export async function POST(request: NextRequest) {
     // 4. 建立客戶記錄
     let customer;
     try {
+      console.log('Creating customer with data:', {
+        email: email.toLowerCase(),
+        name,
+        phone,
+      });
+      
       customer = await createOrUpdateCustomer({
         email,
         name,
         phone,
       });
+      
       console.log('Customer created successfully:', {
         id: customer.id,
         email: customer.email,
         name: customer.name
       });
+      
+      // 驗證客戶記錄確實存在
+      const verifyCustomer = await findCustomerByEmail(customer.email);
+      if (!verifyCustomer) {
+        console.error('CRITICAL: Customer created but not found on verification!', {
+          createdCustomer: customer,
+          searchEmail: customer.email
+        });
+        return NextResponse.json(
+          createErrorResponse(
+            AuthErrorCode.INTERNAL_ERROR,
+            '客戶記錄建立異常，請稍後再試'
+          ),
+          { status: 500 }
+        );
+      }
+      console.log('Customer verified in database:', verifyCustomer.id);
+      
     } catch (error) {
       console.error('Error creating customer:', error);
       return NextResponse.json(
