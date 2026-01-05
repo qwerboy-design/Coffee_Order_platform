@@ -157,6 +157,7 @@
 | `email` | VARCHAR(255) | ✅ | Email | "customer@example.com" |
 | `password_hash` | TEXT | ❌ | bcrypt 加密的密碼（用於密碼登入） | `$2b$10$...` |
 | `auth_provider` | auth_provider_enum | ✅ | 認證方式（預設 'otp'） | 'otp' |
+| `oauth_id` | VARCHAR(255) | ❌ | OAuth 提供者的唯一 ID（用於 Google/Facebook/LINE 登入） | "1234567890" |
 | `email_verified` | BOOLEAN | ✅ | Email 是否已驗證（預設 false） | false |
 | `last_login_at` | TIMESTAMPTZ | ❌ | 最後登入時間 | 2025-12-28T10:00:00.000Z |
 | `total_orders` | INTEGER | ✅ | 總訂單數（≥ 0，預設 0，由 Trigger 自動更新） | 5 |
@@ -167,6 +168,7 @@
 **索引：**
 - `idx_customers_phone` - 唯一索引，用於客戶查詢和去重
 - `idx_customers_email` - 用於 Email 查詢
+- `idx_customers_oauth_id` - 用於 OAuth ID 查詢（支援 Google/Facebook/LINE 登入）
 
 **約束：**
 - `phone` - 唯一約束
@@ -178,6 +180,15 @@
   - `total_orders` = 該客戶的所有非取消訂單數量
   - `total_spent` = 該客戶的所有非取消訂單總金額
   - `last_order_date` = 該客戶的最後訂單日期
+
+**OAuth 綁定說明：**
+- `oauth_id` 欄位用於儲存 OAuth 提供者（Google、Facebook、LINE）的唯一用戶 ID
+- 一個客戶帳號可以同時支援多種登入方式（Email + 密碼、OTP、OAuth）
+- 當使用 Google 登入時：
+  - 如果 `oauth_id` 不存在，會建立新帳號
+  - 如果 `oauth_id` 已存在，會直接登入
+  - 現有用戶可以透過個人資料頁面綁定 Google 帳號
+- 解綁 Google 帳號會將 `oauth_id` 設為 NULL，但不會刪除帳號
 
 ---
 
@@ -454,6 +465,7 @@ Supabase 遷移文件必須按順序執行：
 2. `002_create_tables.sql` - 建立資料表
 3. `003_create_triggers_and_functions.sql` - 建立觸發器和函數
 4. `004_create_rls_policies.sql` - 建立 RLS 政策（如果使用）
+5. `005_add_oauth_id.sql` - 添加 OAuth ID 欄位（支援 Google/Facebook/LINE 登入）
 
 ### 2. 環境變數
 
@@ -505,6 +517,14 @@ SELECT cleanup_expired_otps();
 ---
 
 ## 版本歷史
+
+- **v2.1.0** (2026-01-04)
+  - 添加 `customers.oauth_id` 欄位支援 OAuth 登入
+  - 支援 Google OAuth 2.0 登入
+  - 支援現有用戶綁定/解綁 Google 帳號
+  - 添加 `otp_tokens` 表支援 Email OTP 驗證碼登入
+  - 擴展 `auth_provider_enum` 包含 'google'、'facebook'、'line'
+  - 添加 `idx_customers_oauth_id` 索引
 
 - **v2.0.0** (2026-01-03)
   - 從 Airtable 遷移到 Supabase (PostgreSQL)

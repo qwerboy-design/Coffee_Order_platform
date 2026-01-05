@@ -56,11 +56,28 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. 建立客戶記錄
-    const customer = await createOrUpdateCustomer({
-      email,
-      name,
-      phone,
-    });
+    let customer;
+    try {
+      customer = await createOrUpdateCustomer({
+        email,
+        name,
+        phone,
+      });
+      console.log('Customer created successfully:', {
+        id: customer.id,
+        email: customer.email,
+        name: customer.name
+      });
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      return NextResponse.json(
+        createErrorResponse(
+          AuthErrorCode.INTERNAL_ERROR,
+          '建立客戶記錄失敗，請稍後再試'
+        ),
+        { status: 500 }
+      );
+    }
 
     // 5. 建立並發送 OTP
     try {
@@ -68,8 +85,19 @@ export async function POST(request: NextRequest) {
       const { generateOTP } = require('@/lib/auth/otp-generator');
       const otpCode = generateOTP();
       
-      const otpToken = await createOTPToken(email, otpCode);
-      await sendOTPEmail(email, otpToken.otp_code);
+      console.log('Creating OTP for customer:', {
+        customerId: customer.id,
+        email: customer.email,
+        otpCode
+      });
+      
+      const otpToken = await createOTPToken(customer.email, otpCode);
+      await sendOTPEmail(customer.email, otpToken.otp_code);
+
+      console.log('OTP sent successfully:', {
+        customerId: customer.id,
+        email: customer.email
+      });
 
       return NextResponse.json(
         createSuccessResponse(
@@ -111,6 +139,7 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 
 
 

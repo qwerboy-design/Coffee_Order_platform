@@ -5,6 +5,8 @@
 ## 功能特色
 
 - 🛒 **商品展示與購物車**: 完整的電商購物體驗
+- 🔐 **多元認證方式**: 支援 Email OTP 驗證碼登入、Google OAuth 登入
+- 👤 **會員系統**: 帳號管理、Google 帳號綁定/解綁、訂單歷史查詢
 - 📦 **訂單管理**: 自動化訂單處理流程
 - 🔔 **即時通知**: 整合 LINE Notify、Email、SMS 通知
 - 📊 **後台管理**: 訂單與商品管理介面
@@ -14,6 +16,8 @@
 
 - **前端框架**: Next.js 14 (App Router)
 - **資料庫**: Supabase (PostgreSQL)
+- **認證系統**: JWT Session + Google OAuth 2.0
+- **Email 服務**: Resend（OTP 驗證碼發送）
 - **自動化**: N8N
 - **樣式**: Tailwind CSS
 - **狀態管理**: Zustand
@@ -48,6 +52,10 @@ RESEND_FROM_EMAIL=noreply@yourdomain.com
 # JWT Session
 JWT_SECRET=your_32_character_secret_key
 
+# Google OAuth
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
 # Next.js
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
@@ -70,6 +78,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 2. `supabase/migrations/002_create_tables.sql` - 建立資料表
 3. `supabase/migrations/003_create_triggers_and_functions.sql` - 建立觸發器和函數
 4. `supabase/migrations/004_create_rls_policies.sql` - 建立 RLS 政策（可選）
+5. `supabase/migrations/005_add_oauth_id.sql` - 添加 OAuth ID 欄位（支援 Google 登入）
 
 **重要設定注意事項：**
 - 所有遷移文件必須按順序執行
@@ -79,7 +88,18 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 詳細資料庫結構請參考 [DATABASE.md](DATABASE.md) 文件。
 
-### 4. 設定 N8N
+### 4. 設定 Email 服務（Resend）
+
+> **📖 完整的 Resend 設定指南**: [RESEND_EMAIL_SETUP.md](.cursor/RESEND_EMAIL_SETUP.md)
+
+**快速步驟**：
+1. 註冊 [Resend](https://resend.com) 帳號
+2. 添加您的網域並設定 DNS 記錄（SPF、DKIM、DMARC）
+3. 驗證網域
+4. 創建 API Key
+5. 設定環境變數並測試發送
+
+### 5. 設定 N8N（可選）
 
 建立兩個主要 Workflow：
 
@@ -91,7 +111,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
    - 接收狀態更新
    - 通知買家狀態變更
 
-### 5. 啟動開發伺服器
+### 6. 啟動開發伺服器
 
 ```bash
 npm run dev
@@ -105,19 +125,36 @@ npm run dev
 Coffee_Order_platform/
 ├── app/                    # Next.js App Router
 │   ├── (customer)/        # 顧客端頁面
+│   │   ├── register/      # 註冊頁面（支援 OTP 和 Google 登入）
+│   │   ├── login/         # 登入頁面（支援 OTP 和 Google 登入）
+│   │   └── profile/       # 個人資料頁面（帳號綁定管理）
 │   ├── (admin)/           # 後台管理頁面
 │   └── api/               # API Routes
+│       ├── auth/          # 認證 API
+│       │   ├── send-otp/  # 發送 OTP
+│       │   ├── verify-otp/ # 驗證 OTP
+│       │   ├── register/  # 註冊
+│       │   ├── google/    # Google OAuth
+│       │   ├── link-google/ # 綁定 Google
+│       │   ├── unlink-google/ # 解綁 Google
+│       │   └── me/        # 取得用戶資料
 │       ├── diagnostics/   # 診斷 API（用於檢查 Supabase 連線）
 │       ├── orders/        # 訂單 API
 │       └── products/       # 商品 API
 ├── components/            # React 元件
+│   ├── auth/              # 認證元件
+│   │   ├── OTPInput.tsx   # OTP 輸入元件
+│   │   ├── CountdownTimer.tsx # 倒數計時器
+│   │   ├── GoogleLoginButton.tsx # Google 登入按鈕
+│   │   └── LinkGoogleButton.tsx # Google 綁定按鈕
 │   ├── admin/             # 後台管理元件
 │   ├── customer/          # 顧客端元件
 │   └── shared/            # 共用元件
+│       └── UserMenu.tsx   # 用戶選單（含個人資料連結）
 ├── lib/                   # 工具函數與配置
 │   ├── supabase/          # Supabase 操作
 │   │   ├── client.ts      # Supabase 客戶端配置
-│   │   ├── customers.ts   # 客戶資料操作
+│   │   ├── customers.ts   # 客戶資料操作（含 OAuth 綁定/解綁）
 │   │   ├── orders.ts      # 訂單操作
 │   │   ├── products.ts    # 商品操作
 │   │   └── otp.ts         # OTP 驗證碼操作
@@ -126,12 +163,16 @@ Coffee_Order_platform/
 │   │   └── otp-generator.ts # OTP 生成器
 │   ├── n8n/               # N8N 整合
 │   ├── email/             # Email 服務 (Resend)
+│   │   └── resend.ts      # 發送 OTP 驗證郵件
+│   ├── rate-limit.ts      # IP 和 Email 限流
+│   ├── errors.ts          # 統一錯誤處理
 │   ├── utils/             # 工具函數
 │   └── validation/        # 資料驗證（Zod schemas）
 ├── types/                 # TypeScript 型別定義
-│   ├── customer.ts        # 客戶型別
+│   ├── customer.ts        # 客戶型別（含 oauth_id）
 │   ├── order.ts           # 訂單型別
-│   └── product.ts         # 商品型別
+│   ├── product.ts         # 商品型別
+│   └── google.d.ts        # Google Identity Services 型別定義
 └── hooks/                 # React Hooks
     └── useCart.ts         # 購物車 Hook
 ```
@@ -143,9 +184,9 @@ Coffee_Order_platform/
 - **products** - 商品資料表
 - **orders** - 訂單主檔表
 - **order_items** - 訂單明細表
-- **customers** - 客戶資料表
+- **customers** - 客戶資料表（含 `oauth_id` 欄位支援 OAuth 綁定）
 - **order_status_log** - 訂單狀態歷程表
-- **otp_tokens** - OTP 驗證碼表
+- **otp_tokens** - OTP 驗證碼表（支援 Email OTP 登入）
 
 **資料庫特色：**
 - 使用 PostgreSQL ENUM 類型確保資料一致性
@@ -153,10 +194,21 @@ Coffee_Order_platform/
 - 使用外鍵約束維護資料完整性
 - 使用 Triggers 自動化業務邏輯（狀態記錄、統計更新等）
 - 使用 RPC 函數處理複雜操作（訂單編號生成、庫存扣減等）
+- 支援多種認證方式（Email + 密碼、OTP、Google OAuth）
 
 詳細的資料庫結構說明請參考 [DATABASE.md](DATABASE.md) 文件。
 
 ## API 端點
+
+### 認證 API
+
+- `POST /api/auth/send-otp` - 發送 OTP 驗證碼到 Email
+- `POST /api/auth/verify-otp` - 驗證 OTP 並登入
+- `POST /api/auth/register` - 註冊新帳號（Email + 密碼）
+- `POST /api/auth/google` - Google OAuth 登入
+- `POST /api/auth/link-google` - 綁定 Google 帳號到現有用戶
+- `POST /api/auth/unlink-google` - 解綁 Google 帳號
+- `GET /api/auth/me` - 取得當前用戶資料
 
 ### 商品 API
 
@@ -229,6 +281,8 @@ Vercel 是部署 Next.js 應用的最佳選擇，提供原生支援和自動部�
      RESEND_API_KEY=your_resend_api_key
      RESEND_FROM_EMAIL=noreply@yourdomain.com
      JWT_SECRET=your_32_character_secret_key
+     NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+     GOOGLE_CLIENT_SECRET=your_google_client_secret
      N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook
      N8N_WEBHOOK_SECRET=your_webhook_secret
      NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
@@ -301,6 +355,8 @@ GitHub Pages 只支援靜態網站，無法運行 Next.js 的服務器端功能�
 - `RESEND_API_KEY` - Resend Email 服務 API Key
 - `RESEND_FROM_EMAIL` - 發送者 Email 地址
 - `JWT_SECRET` - JWT Session 密鑰（至少 32 字元）
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID` - Google OAuth Client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth Client Secret
 
 **可選環境變數：**
 - `N8N_WEBHOOK_URL` - N8N Webhook URL（用於訂單通知）
