@@ -4,9 +4,30 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+// 驗證環境變數
+if (!supabaseUrl) {
+  console.error('[Supabase] NEXT_PUBLIC_SUPABASE_URL is not set!');
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
 }
+
+if (!supabaseAnonKey) {
+  console.error('[Supabase] NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY is not set!');
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY');
+}
+
+if (!supabaseServiceRoleKey) {
+  console.error('[Supabase] SUPABASE_SERVICE_ROLE_KEY is not set!');
+  throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY');
+}
+
+// 驗證 service role key 格式
+if (!supabaseServiceRoleKey.startsWith('sb_secret_') && !supabaseServiceRoleKey.startsWith('eyJ')) {
+  console.error('[Supabase] SUPABASE_SERVICE_ROLE_KEY appears to be invalid format:', 
+    supabaseServiceRoleKey.substring(0, 10) + '...');
+}
+
+console.log('[Supabase] Initializing with URL:', supabaseUrl);
+console.log('[Supabase] Service role key prefix:', supabaseServiceRoleKey.substring(0, 15) + '...');
 
 /**
  * Supabase 客戶端（用於前端和一般 API 操作）

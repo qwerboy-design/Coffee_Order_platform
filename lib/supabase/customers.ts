@@ -74,11 +74,19 @@ export async function findCustomerByEmail(email: string): Promise<Customer | nul
  */
 export async function createOrUpdateCustomer(data: CreateCustomerRequest): Promise<Customer> {
   try {
+    console.log('[createOrUpdateCustomer] Starting with data:', {
+      email: data.email.toLowerCase(),
+      name: data.name,
+      phone: data.phone,
+    });
+    
     // 先查詢是否已存在（根據電話）
     const existing = await getCustomerByPhone(data.phone);
+    console.log('[createOrUpdateCustomer] Existing customer by phone:', existing?.id || 'none');
 
     if (existing) {
       // 更新現有客戶
+      console.log('[createOrUpdateCustomer] Updating existing customer:', existing.id);
       const { data: updated, error } = await supabaseAdmin
         .from(TABLES.CUSTOMERS)
         .update({
@@ -89,26 +97,56 @@ export async function createOrUpdateCustomer(data: CreateCustomerRequest): Promi
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[createOrUpdateCustomer] Update error:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw error;
+      }
+      
+      console.log('[createOrUpdateCustomer] Updated customer:', {
+        id: updated.id,
+        email: updated.email,
+      });
       return mapCustomerRecord(updated);
     } else {
       // 建立新客戶
+      console.log('[createOrUpdateCustomer] Creating new customer');
+      const insertData = {
+        name: data.name,
+        phone: data.phone,
+        email: data.email.toLowerCase(),
+        auth_provider: (data.auth_provider as AuthProvider) || 'otp',
+      };
+      console.log('[createOrUpdateCustomer] Insert data:', insertData);
+      
       const { data: created, error } = await supabaseAdmin
         .from(TABLES.CUSTOMERS)
-        .insert({
-          name: data.name,
-          phone: data.phone,
-          email: data.email.toLowerCase(),
-          auth_provider: (data.auth_provider as AuthProvider) || 'otp',
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[createOrUpdateCustomer] Insert error:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw error;
+      }
+      
+      console.log('[createOrUpdateCustomer] Created customer:', {
+        id: created.id,
+        email: created.email,
+      });
       return mapCustomerRecord(created);
     }
   } catch (error) {
-    console.error('Error creating/updating customer:', error);
+    console.error('[createOrUpdateCustomer] Error:', error);
     throw new Error('建立或更新客戶失敗');
   }
 }
