@@ -76,22 +76,8 @@ export async function POST(request: NextRequest) {
         name: customer.name
       });
       
-      // 驗證客戶記錄確實存在
-      const verifyCustomer = await findCustomerByEmail(customer.email);
-      if (!verifyCustomer) {
-        console.error('CRITICAL: Customer created but not found on verification!', {
-          createdCustomer: customer,
-          searchEmail: customer.email
-        });
-        return NextResponse.json(
-          createErrorResponse(
-            AuthErrorCode.INTERNAL_ERROR,
-            '客戶記錄建立異常，請稍後再試'
-          ),
-          { status: 500 }
-        );
-      }
-      console.log('Customer verified in database:', verifyCustomer.id);
+      // 不再立即驗證，信任 createOrUpdateCustomer 的結果
+      // 因為 Supabase 的回應已經包含了建立的客戶資料
       
     } catch (error) {
       console.error('Error creating customer:', error);
