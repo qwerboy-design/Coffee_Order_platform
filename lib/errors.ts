@@ -19,11 +19,15 @@ export enum AuthErrorCode {
   // 註冊相關錯誤
   EMAIL_ALREADY_EXISTS = 'EMAIL_ALREADY_EXISTS',
   PHONE_ALREADY_EXISTS = 'PHONE_ALREADY_EXISTS',
+  DUPLICATE = 'DUPLICATE',
 
   // Session 相關錯誤
   UNAUTHORIZED = 'UNAUTHORIZED',
   SESSION_EXPIRED = 'SESSION_EXPIRED',
   INVALID_SESSION = 'INVALID_SESSION',
+
+  // 資源相關錯誤
+  NOT_FOUND = 'NOT_FOUND',
 
   // 一般錯誤
   VALIDATION_ERROR = 'VALIDATION_ERROR',
@@ -79,9 +83,11 @@ export function createErrorResponse(
     [AuthErrorCode.RATE_LIMIT_EXCEEDED]: '請求過於頻繁，請稍後再試',
     [AuthErrorCode.EMAIL_ALREADY_EXISTS]: '此 Email 已被註冊',
     [AuthErrorCode.PHONE_ALREADY_EXISTS]: '此電話號碼已被使用',
+    [AuthErrorCode.DUPLICATE]: '資料重複',
     [AuthErrorCode.UNAUTHORIZED]: '未授權，請先登入',
     [AuthErrorCode.SESSION_EXPIRED]: 'Session 已過期，請重新登入',
     [AuthErrorCode.INVALID_SESSION]: '無效的 Session',
+    [AuthErrorCode.NOT_FOUND]: '找不到資源',
     [AuthErrorCode.VALIDATION_ERROR]: '資料驗證失敗',
     [AuthErrorCode.INTERNAL_ERROR]: '伺服器錯誤，請稍後再試',
   };
@@ -106,6 +112,7 @@ export function createSuccessResponse<T>(
     ...(message && { message }),
   };
 }
+
 
 
 

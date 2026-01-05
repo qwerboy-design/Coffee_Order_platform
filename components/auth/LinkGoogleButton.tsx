@@ -2,20 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react';
 
-// Google Identity Services 全域型別
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: any) => void;
-          renderButton: (element: HTMLElement | null, config: any) => void;
-        };
-      };
-    };
-  }
-}
-
 interface LinkGoogleButtonProps {
   onSuccess?: () => void;
   onError?: (error: string) => void;

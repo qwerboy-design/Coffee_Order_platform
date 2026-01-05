@@ -3,21 +3,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Google Identity Services 全域型別
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: any) => void;
-          renderButton: (element: HTMLElement | null, config: any) => void;
-          prompt: () => void;
-        };
-      };
-    };
-  }
-}
-
 interface GoogleLoginButtonProps {
   onError?: (error: string) => void;
   onSuccess?: () => void;
