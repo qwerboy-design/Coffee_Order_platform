@@ -11,6 +11,7 @@ interface CustomerProfile {
   phone: string;
   auth_provider?: string;
   oauth_id?: string;
+  password_hash?: string;
   total_orders: number;
   total_spent: number;
   last_order_date?: string;
