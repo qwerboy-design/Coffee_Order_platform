@@ -1,0 +1,123 @@
+{
+  "name": "咖啡豆訂單系統 - 新訂單通知",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-order",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook - 新訂單",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 新訂單郵件處理 JavaScript\n// 此程式碼處理從 webhook 接收的訂單資料，並格式化為郵件內容\n\nconst order = $input.first().json;\n\n// 格式化訂單項目為 HTML 表格行\nconst formatOrderItems = (items) => {\n  if (!items || items.length === 0) {\n    return '<tr><td colspan=\"4\" style=\"text-align: center; padding: 15px;\">無商品資訊</td></tr>';\n  }\n  \n  return items.map(item => `\n    <tr>\n      <td style=\"padding: 12px; border-bottom: 1px solid #e5e7eb;\">${item.product_name}</td>\n      <td style=\"padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;\">${item.grind_option || '原豆'}</td>\n      <td style=\"padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;\">${item.quantity}</td>\n      <td style=\"padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right;\">NT$ ${item.unit_price.toLocaleString()}</td>\n    </tr>\n  `).join('');\n};\n\n// 格式化日期時間\nconst formatDateTime = () => {\n  const now = new Date();\n  const options = {\n    timeZone: 'Asia/Taipei',\n    year: 'numeric',\n    month: '2-digit',\n    day: '2-digit',\n    hour: '2-digit',\n    minute: '2-digit'\n  };\n  return now.toLocaleString('zh-TW', options);\n};\n\n// 生成郵件 HTML 內容\nconst generateEmailHtml = (order) => {\n  return `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>訂單確認 - ${order.order_id}</title>\n</head>\n<body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;\">\n  \n  <!-- 標題區塊 -->\n  <div style=\"background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;\">\n    <h1 style=\"color: white; margin: 0; font-size: 28px;\">☕ 訂單確認</h1>\n    <p style=\"color: rgba(255,255,255,0.9); margin: 10px 0 0 0;\">感謝您的訂購！</p>\n  </div>\n  \n  <!-- 主要內容區塊 -->\n  <div style=\"background: white; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;\">\n    \n    <!-- 訂單編號 -->\n    <div style=\"background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin-bottom: 25px; border-radius: 4px;\">\n      <p style=\"margin: 0; font-size: 14px; color: #92400e;\">訂單編號</p>\n      <p style=\"margin: 5px 0 0 0; font-size: 20px; font-weight: bold; color: #78350f;\">${order.order_id}</p>\n    </div>\n    \n    <!-- 訂單狀態 -->\n    <div style=\"text-align: center; margin-bottom: 25px;\">\n      <span style=\"background: #dcfce7; color: #166534; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 500;\">✓ 訂單已成立</span>\n    </div>\n    \n    <!-- 客戶資訊 -->\n    <h3 style=\"color: #1f2937; border-bottom: 2px solid #f59e0b; padding-bottom: 10px; margin-top: 25px;\">📋 訂購人資訊</h3>\n    <table style=\"width: 100%; margin-bottom: 20px;\">\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280; width: 30%;\">姓名：</td>\n        <td style=\"padding: 8px 0; font-weight: 500;\">${order.customer_name}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">電話：</td>\n        <td style=\"padding: 8px 0;\">${order.customer_phone}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">Email：</td>\n        <td style=\"padding: 8px 0;\">${order.customer_email}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">取件方式：</td>\n        <td style=\"padding: 8px 0;\">${order.pickup_method}</td>\n      </tr>\n      <tr>\n        <td style=\"padding: 8px 0; color: #6b7280;\">付款方式：</td>\n        <td style=\"padding: 8px 0;\">${order.payment_method}</td>\n      </tr>\n    </table>\n    \n    <!-- 訂單明細 -->\n    <h3 style=\"color: #1f2937; border-bottom: 2px solid #f59e0b; padding-bottom: 10px; margin-top: 25px;\">🛒 訂單明細</h3>\n    <table style=\"width: 100%; border-collapse: collapse; margin-bottom: 20px;\">\n      <thead>\n        <tr style=\"background: #f3f4f6;\">\n          <th style=\"padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;\">商品名稱</th>\n          <th style=\"padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;\">研磨方式</th>\n          <th style=\"padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;\">數量</th>\n          <th style=\"padding: 12px; text-align: right; border-bottom: 2px solid #e5e7eb;\">單價</th>\n        </tr>\n      </thead>\n      <tbody>\n        ${formatOrderItems(order.order_items)}\n      </tbody>\n    </table>\n    \n    <!-- 金額明細 -->\n    <div style=\"background: #f9fafb; padding: 20px; border-radius: 8px; margin-top: 20px;\">\n      <table style=\"width: 100%;\">\n        <tr>\n          <td style=\"padding: 8px 0; color: #6b7280;\">商品小計：</td>\n          <td style=\"padding: 8px 0; text-align: right;\">NT$ ${order.total_amount.toLocaleString()}</td>\n        </tr>\n        ${order.discount_amount && order.discount_amount > 0 ? `\n        <tr>\n          <td style=\"padding: 8px 0; color: #dc2626;\">折扣優惠：</td>\n          <td style=\"padding: 8px 0; text-align: right; color: #dc2626;\">-NT$ ${order.discount_amount.toLocaleString()}</td>\n        </tr>\n        ` : ''}\n        <tr style=\"border-top: 2px solid #f59e0b;\">\n          <td style=\"padding: 15px 0 8px 0; font-size: 18px; font-weight: bold; color: #1f2937;\">應付金額：</td>\n          <td style=\"padding: 15px 0 8px 0; text-align: right; font-size: 24px; font-weight: bold; color: #f59e0b;\">NT$ ${order.final_amount.toLocaleString()}</td>\n        </tr>\n      </table>\n    </div>\n    \n    <!-- 備註 -->\n    ${order.notes ? `\n    <div style=\"margin-top: 20px; padding: 15px; background: #fef3c7; border-radius: 8px;\">\n      <p style=\"margin: 0; color: #92400e;\"><strong>📝 備註：</strong></p>\n      <p style=\"margin: 5px 0 0 0; color: #78350f;\">${order.notes}</p>\n    </div>\n    ` : ''}\n    \n    <!-- 後續步驟 -->\n    <div style=\"margin-top: 30px; padding: 20px; background: #ecfdf5; border-radius: 8px;\">\n      <h4 style=\"margin: 0 0 15px 0; color: #065f46;\">📍 後續步驟</h4>\n      <ol style=\"margin: 0; padding-left: 20px; color: #047857;\">\n        ${order.pickup_method === '宅配' ? `\n        <li style=\"margin-bottom: 8px;\">我們將盡快處理您的訂單</li>\n        <li style=\"margin-bottom: 8px;\">商品準備完成後會以電話或 Email 通知您</li>\n        <li style=\"margin-bottom: 8px;\">宅配商品預計 2-3 個工作天送達</li>\n        ` : `\n        <li style=\"margin-bottom: 8px;\">我們將盡快處理您的訂單</li>\n        <li style=\"margin-bottom: 8px;\">商品準備完成後會以電話或 Email 通知您</li>\n        <li style=\"margin-bottom: 8px;\">請於營業時間內至店面取貨</li>\n        `}\n      </ol>\n    </div>\n    \n  </div>\n  \n  <!-- 頁尾 -->\n  <div style=\"text-align: center; margin-top: 30px; color: #9ca3af; font-size: 12px;\">\n    <p>此為系統自動發送的信件，請勿直接回覆。</p>\n    <p>如有任何問題，請聯繫客服。</p>\n    <p style=\"margin-top: 15px;\">© 2024 咖啡豆訂單系統 - 用心烘焙，品味生活</p>\n  </div>\n  \n</body>\n</html>\n`;\n};\n\n// 生成純文字版本（備用）\nconst generatePlainText = (order) => {\n  const itemsList = order.order_items?.map(item => \n    `  - ${item.product_name} (${item.grind_option || '原豆'}) x${item.quantity} = NT$${item.unit_price}`\n  ).join('\\n') || '  無商品資訊';\n  \n  return `\n☕ 訂單確認通知\n================\n\n訂單編號: ${order.order_id}\n訂單時間: ${formatDateTime()}\n\n📋 訂購人資訊\n--------------\n姓名: ${order.customer_name}\n電話: ${order.customer_phone}\nEmail: ${order.customer_email}\n取件方式: ${order.pickup_method}\n付款方式: ${order.payment_method}\n\n🛒 訂單明細\n--------------\n${itemsList}\n\n💰 金額\n--------------\n商品小計: NT$ ${order.total_amount.toLocaleString()}\n${order.discount_amount && order.discount_amount > 0 ? `折扣優惠: -NT$ ${order.discount_amount.toLocaleString()}\\n` : ''}應付金額: NT$ ${order.final_amount.toLocaleString()}\n\n${order.notes ? `📝 備註: ${order.notes}\\n` : ''}\n\n感謝您的訂購！\n咖啡豆訂單系統\n`;\n};\n\n// 輸出處理後的資料\nreturn {\n  to: order.customer_email,\n  subject: `[訂單確認] ${order.order_id} - 咖啡豆訂單系統`,\n  html: generateEmailHtml(order),\n  text: generatePlainText(order),\n  order_id: order.order_id,\n  customer_name: order.customer_name,\n  customer_email: order.customer_email,\n  final_amount: order.final_amount\n};"
+      },
+      "id": "code-format-email",
+      "name": "Code - 格式化郵件內容",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@qwerboy.com",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "replyTo": "noreply@qwerboy.com"
+        }
+      },
+      "id": "send-email",
+      "name": "Send Email - 發送訂單確認",
+      "type": "n8n-nodes-base.sendEmail",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "credentials": {
+        "smtp": {
+          "id": "YOUR_SMTP_CREDENTIAL_ID",
+          "name": "Resend SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "success"
+            },
+            {
+              "name": "message",
+              "value": "=訂單 {{ $json.order_id }} 確認郵件已發送至 {{ $json.customer_email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-response",
+      "name": "Set - 設定回應",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - 新訂單": {
+      "main": [
+        [
+          {
+            "node": "Code - 格式化郵件內容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - 格式化郵件內容": {
+      "main": [
+        [
+          {
+            "node": "Send Email - 發送訂單確認",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email - 發送訂單確認": {
+      "main": [
+        [
+          {
+            "node": "Set - 設定回應",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "id": "new-order-email-workflow",
+  "meta": {
+    "instanceId": "coffee-order-platform"
+  },
+  "tags": [
+    {
+      "name": "訂單通知",
+      "createdAt": "2026-01-05T00:00:00.000Z"
+    }
+  ]
+}
+
