@@ -116,5 +116,49 @@ export async function requireSession(): Promise<SessionPayload> {
   return session;
 }
 
+/**
+ * 驗證 Session（用於 API Route，從 Request 中取得）
+ * @param request NextRequest 物件
+ * @returns Session Payload 或 null
+ */
+export async function validateSession(
+  request: Request
+): Promise<SessionPayload | null> {
+  try {
+    // 從 Cookie 中取得 token
+    const cookieHeader = request.headers.get('cookie');
+    if (!cookieHeader) {
+      return null;
+    }
+
+    // 解析 Cookie
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const token = cookies[SESSION_COOKIE_NAME];
+    if (!token) {
+      return null;
+    }
+
+    // 驗證 JWT
+    const secret = new TextEncoder().encode(config.jwt.secret);
+    const { payload } = await jwtVerify<SessionPayload>(token, secret);
+
+    // 檢查是否過期
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+
+    return payload;
+  } catch (error) {
+    // Token 無效或已過期
+    return null;
+  }
+}
+
+
 
 
