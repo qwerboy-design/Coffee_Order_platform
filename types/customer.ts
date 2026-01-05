@@ -8,6 +8,7 @@ export interface Customer {
   // 認證相關欄位
   password_hash?: string;
   auth_provider?: AuthProvider;
+  oauth_id?: string; // OAuth 提供者的用戶 ID (Google sub, Facebook id 等)
   email_verified?: boolean;
   last_login_at?: string;
   // 現有欄位
@@ -24,6 +25,7 @@ export interface CreateCustomerRequest {
   password?: string; // 可選的密碼（用於密碼註冊）
   auth_provider?: AuthProvider;
 }
+
 
 
 

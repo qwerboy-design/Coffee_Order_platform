@@ -9,6 +9,7 @@ import { registerSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
 import { OTPInput } from '@/components/auth/OTPInput';
 import { CountdownTimer } from '@/components/auth/CountdownTimer';
+import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -127,6 +128,22 @@ export default function RegisterPage() {
         </h1>
 
         {step === 'form' ? (
+          <>
+            {/* Google 註冊按鈕 */}
+            <div className="mb-6">
+              <GoogleLoginButton
+                onError={(error) => setError(error)}
+                text="signup_with"
+              />
+            </div>
+
+            {/* 分隔線 */}
+            <div className="flex items-center my-6">
+              <div className="flex-1 border-t border-gray-300"></div>
+              <span className="px-4 text-sm text-gray-500">或使用 Email 註冊</span>
+              <div className="flex-1 border-t border-gray-300"></div>
+            </div>
+
           <form onSubmit={form.handleSubmit(handleRegister)} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -224,6 +241,7 @@ export default function RegisterPage() {
               </Link>
             </div>
           </form>
+          </>
         ) : (
           <div className="space-y-6">
             <div className="text-center">

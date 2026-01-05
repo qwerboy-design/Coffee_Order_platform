@@ -193,6 +193,116 @@ export async function updateCustomerStats(customerId: string): Promise<void> {
 }
 
 /**
+ * 根據 ID 查詢客戶
+ */
+export async function getCustomerById(customerId: string): Promise<Customer | null> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from(TABLES.CUSTOMERS)
+      .select('*')
+      .eq('id', customerId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    return mapCustomerRecord(data);
+  } catch (error) {
+    console.error('Error fetching customer by ID:', error);
+    return null;
+  }
+}
+
+/**
+ * 綁定 OAuth 提供者到現有帳號
+ */
+export async function linkOAuthProvider(
+  customerId: string,
+  provider: AuthProvider,
+  oauthId: string
+): Promise<Customer> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from(TABLES.CUSTOMERS)
+      .update({
+        oauth_id: oauthId,
+        // 可選：如果想保留原始認證方式，不更新 auth_provider
+        // 或更新為最新的認證方式
+      })
+      .eq('id', customerId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return mapCustomerRecord(data);
+  } catch (error) {
+    console.error('Error linking OAuth provider:', error);
+    throw new Error('綁定 Google 帳號失敗');
+  }
+}
+
+/**
+ * 解綁 OAuth 提供者
+ */
+export async function unlinkOAuthProvider(customerId: string): Promise<Customer> {
+  try {
+    // 先檢查是否有設定密碼，避免用戶無法登入
+    const customer = await getCustomerById(customerId);
+    if (!customer) {
+      throw new Error('客戶不存在');
+    }
+
+    if (!customer.password_hash) {
+      throw new Error('請先設定密碼後再解綁 Google 帳號，以確保您能夠繼續登入');
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from(TABLES.CUSTOMERS)
+      .update({
+        oauth_id: null,
+      })
+      .eq('id', customerId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return mapCustomerRecord(data);
+  } catch (error) {
+    console.error('Error unlinking OAuth provider:', error);
+    throw error;
+  }
+}
+
+/**
+ * 根據 OAuth ID 查詢客戶
+ */
+export async function findCustomerByOAuthId(oauthId: string): Promise<Customer | null> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from(TABLES.CUSTOMERS)
+      .select('*')
+      .eq('oauth_id', oauthId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    return mapCustomerRecord(data);
+  } catch (error) {
+    console.error('Error fetching customer by OAuth ID:', error);
+    return null;
+  }
+}
+
+/**
  * 映射資料庫記錄到 Customer 類型
  */
 function mapCustomerRecord(record: any): Customer {
@@ -203,6 +313,7 @@ function mapCustomerRecord(record: any): Customer {
     email: record.email,
     password_hash: record.password_hash || undefined,
     auth_provider: record.auth_provider as AuthProvider || undefined,
+    oauth_id: record.oauth_id || undefined,
     email_verified: record.email_verified || false,
     last_login_at: record.last_login_at || undefined,
     total_orders: record.total_orders || 0,

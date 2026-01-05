@@ -9,6 +9,7 @@ import { loginEmailSchema, loginPasswordSchema } from '@/lib/validation/schemas'
 import { z } from 'zod';
 import { OTPInput } from '@/components/auth/OTPInput';
 import { CountdownTimer } from '@/components/auth/CountdownTimer';
+import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
 
 type LoginEmailFormData = z.infer<typeof loginEmailSchema>;
 type LoginPasswordFormData = z.infer<typeof loginPasswordSchema>;
@@ -163,6 +164,21 @@ export default function LoginPage() {
 
         {step === 'password' ? (
           <>
+            {/* Google 登入按鈕 */}
+            <div className="mb-6">
+              <GoogleLoginButton
+                onError={(error) => setError(error)}
+                text="signin_with"
+              />
+            </div>
+
+            {/* 分隔線 */}
+            <div className="flex items-center my-6">
+              <div className="flex-1 border-t border-gray-300"></div>
+              <span className="px-4 text-sm text-gray-500">或</span>
+              <div className="flex-1 border-t border-gray-300"></div>
+            </div>
+
             {/* 登入方式切換 */}
             <div className="flex gap-2 mb-6">
               <button

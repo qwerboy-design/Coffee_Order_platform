@@ -73,6 +73,15 @@ export function UserMenu({ user }: UserMenuProps) {
             <p className="text-xs text-gray-500 truncate">{user.email}</p>
           </div>
           <button
+            onClick={() => {
+              router.push('/profile');
+              setIsOpen(false);
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            個人資料
+          </button>
+          <button
             onClick={handleLogout}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
           >
@@ -83,6 +92,7 @@ export function UserMenu({ user }: UserMenuProps) {
     </div>
   );
 }
+
 
 
 
