@@ -10,7 +10,7 @@ export default async function Header() {
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-coffee-700">
+          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-tech-cyan via-tech-blue to-tech-purple bg-clip-text text-transparent hover:from-tech-blue hover:via-tech-purple hover:to-tech-pink transition-all duration-300">
             ☕ Mike&apos;s Coffee
           </Link>
           <nav className="flex items-center gap-6">

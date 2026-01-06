@@ -3,7 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --background: #BEE9E8; /* 淺藍綠色背景 */
+  --background: linear-gradient(
+    229deg,
+    hsl(195deg 100% 50%) 0%,
+    hsl(196deg 100% 50%) 17%,
+    hsl(197deg 100% 50%) 25%,
+    hsl(198deg 100% 50%) 31%,
+    hsl(202deg 100% 57%) 37%,
+    hsl(208deg 100% 64%) 42%,
+    hsl(216deg 100% 69%) 47%,
+    hsl(227deg 100% 74%) 53%,
+    hsl(244deg 100% 78%) 58%,
+    hsl(261deg 100% 75%) 63%,
+    hsl(274deg 100% 73%) 69%,
+    hsl(285deg 100% 70%) 75%,
+    hsl(295deg 95% 65%) 83%,
+    hsl(306deg 100% 60%) 100%
+  );
   --foreground: #2e2518; /* 深咖啡色文字 */
 }
 
@@ -17,6 +33,8 @@
 body {
   color: var(--foreground);
   background: var(--background);
+  background-attachment: fixed;
+  min-height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
 }
 
