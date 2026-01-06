@@ -12,7 +12,7 @@ export function HeaderClient() {
   useEffect(() => {
     setIsMounted(true);
     setHydratedItemCount(itemCount);
-  }, []);
+  }, [itemCount]);
 
   useEffect(() => {
     if (isMounted) {
