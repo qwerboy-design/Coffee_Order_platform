@@ -78,7 +78,7 @@ export default function RegisterPasswordPage() {
   return (
     <div className="max-w-md mx-auto mt-12 px-4">
       <div className="bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold text-center mb-8 text-amber-800">
+        <h1 className="text-3xl font-bold text-center mb-8 text-coffee-800">
           註冊
         </h1>
 
@@ -93,7 +93,7 @@ export default function RegisterPasswordPage() {
               {...form.register('email')}
               className={`
                 w-full px-4 py-3 border rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-amber-500
+                focus:outline-none focus:ring-2 focus:ring-coffee-500
                 ${form.formState.errors.email ? 'border-red-500' : 'border-gray-300'}
               `}
               placeholder="example@email.com"
@@ -116,7 +116,7 @@ export default function RegisterPasswordPage() {
               {...form.register('name')}
               className={`
                 w-full px-4 py-3 border rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-amber-500
+                focus:outline-none focus:ring-2 focus:ring-coffee-500
                 ${form.formState.errors.name ? 'border-red-500' : 'border-gray-300'}
               `}
               placeholder="請輸入您的姓名"
@@ -139,7 +139,7 @@ export default function RegisterPasswordPage() {
               {...form.register('phone')}
               className={`
                 w-full px-4 py-3 border rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-amber-500
+                focus:outline-none focus:ring-2 focus:ring-coffee-500
                 ${form.formState.errors.phone ? 'border-red-500' : 'border-gray-300'}
               `}
               placeholder="0912345678"
@@ -162,7 +162,7 @@ export default function RegisterPasswordPage() {
               {...form.register('password')}
               className={`
                 w-full px-4 py-3 border rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-amber-500
+                focus:outline-none focus:ring-2 focus:ring-coffee-500
                 ${form.formState.errors.password ? 'border-red-500' : 'border-gray-300'}
               `}
               placeholder="至少 8 個字元，包含字母和數字"
@@ -208,7 +208,7 @@ export default function RegisterPasswordPage() {
               {...form.register('confirmPassword')}
               className={`
                 w-full px-4 py-3 border rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-amber-500
+                focus:outline-none focus:ring-2 focus:ring-coffee-500
                 ${form.formState.errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}
               `}
               placeholder="請再次輸入密碼"
@@ -232,8 +232,8 @@ export default function RegisterPasswordPage() {
             disabled={isLoading}
             className={`
               w-full py-3 px-4 rounded-lg font-medium
-              bg-amber-600 text-white
-              hover:bg-amber-700
+              bg-button-500 text-white
+              hover:bg-button-600
               disabled:bg-gray-400 disabled:cursor-not-allowed
               transition-colors
             `}
@@ -244,13 +244,13 @@ export default function RegisterPasswordPage() {
           <div className="text-center space-y-2">
             <div className="text-sm text-gray-600">
               已經有帳號？{' '}
-              <Link href="/login" className="text-amber-600 hover:text-amber-700 font-medium">
+              <Link href="/login" className="text-coffee-600 hover:text-coffee-700 font-medium">
                 立即登入
               </Link>
             </div>
             <div className="text-sm text-gray-600">
               或{' '}
-              <Link href="/register" className="text-amber-600 hover:text-amber-700 font-medium">
+              <Link href="/register" className="text-coffee-600 hover:text-coffee-700 font-medium">
                 使用 OTP 驗證碼註冊
               </Link>
             </div>

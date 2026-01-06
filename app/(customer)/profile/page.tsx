@@ -126,7 +126,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto mt-12 px-4 pb-12">
-      <h1 className="text-3xl font-bold text-amber-800 mb-8">個人資料</h1>
+      <h1 className="text-3xl font-bold text-coffee-800 mb-8">個人資料</h1>
 
       {/* 成功訊息 */}
       {successMessage && (
@@ -228,8 +228,8 @@ export default function ProfilePage() {
             )}
             
             {profile.oauth_id && !profile.password_hash && (
-              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-700">
+              <div className="mt-4 p-4 bg-coffee-50 border border-coffee-200 rounded-lg">
+                <p className="text-sm text-coffee-700">
                   ⚠️ 請先設定密碼後再解綁 Google 帳號，以確保您能夠繼續登入
                 </p>
               </div>
@@ -243,9 +243,9 @@ export default function ProfilePage() {
         <h2 className="text-xl font-semibold text-gray-800 mb-6">訂單統計</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-4 bg-amber-50 rounded-lg">
+          <div className="text-center p-4 bg-coffee-50 rounded-lg">
             <p className="text-sm text-gray-600 mb-2">總訂單數</p>
-            <p className="text-3xl font-bold text-amber-600">{profile.total_orders}</p>
+            <p className="text-3xl font-bold text-coffee-600">{profile.total_orders}</p>
           </div>
           
           <div className="text-center p-4 bg-green-50 rounded-lg">

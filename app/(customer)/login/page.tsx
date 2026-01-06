@@ -158,7 +158,7 @@ export default function LoginPage() {
   return (
     <div className="max-w-md mx-auto mt-12 px-4">
       <div className="bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold text-center mb-8 text-amber-800">
+        <h1 className="text-3xl font-bold text-center mb-8 text-coffee-800">
           登入
         </h1>
 
@@ -191,7 +191,7 @@ export default function LoginPage() {
                 className={`
                   flex-1 py-2 px-4 rounded-lg font-medium transition-colors
                   ${loginMethod === 'password'
-                    ? 'bg-amber-600 text-white'
+                    ? 'bg-button-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
                 `}
               >
@@ -207,7 +207,7 @@ export default function LoginPage() {
                 className={`
                   flex-1 py-2 px-4 rounded-lg font-medium transition-colors
                   ${loginMethod === 'otp'
-                    ? 'bg-amber-600 text-white'
+                    ? 'bg-button-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
                 `}
               >
@@ -227,7 +227,7 @@ export default function LoginPage() {
                   {...passwordForm.register('email')}
                   className={`
                     w-full px-4 py-3 border rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-amber-500
+                    focus:outline-none focus:ring-2 focus:ring-coffee-500
                     ${passwordForm.formState.errors.email ? 'border-red-500' : 'border-gray-300'}
                   `}
                   placeholder="請輸入您的 Email"
@@ -250,7 +250,7 @@ export default function LoginPage() {
                   {...passwordForm.register('password')}
                   className={`
                     w-full px-4 py-3 border rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-amber-500
+                    focus:outline-none focus:ring-2 focus:ring-coffee-500
                     ${passwordForm.formState.errors.password ? 'border-red-500' : 'border-gray-300'}
                   `}
                   placeholder="請輸入您的密碼"
@@ -274,8 +274,8 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className={`
                   w-full py-3 px-4 rounded-lg font-medium
-                  bg-amber-600 text-white
-                  hover:bg-amber-700
+                  bg-button-500 text-white
+                  hover:bg-button-600
                   disabled:bg-gray-400 disabled:cursor-not-allowed
                   transition-colors
                 `}
@@ -285,7 +285,7 @@ export default function LoginPage() {
 
               <div className="text-center text-sm text-gray-600">
                 還沒有帳號？{' '}
-                <Link href="/register" className="text-amber-600 hover:text-amber-700 font-medium">
+                <Link href="/register" className="text-coffee-600 hover:text-coffee-700 font-medium">
                   立即註冊
                 </Link>
               </div>
@@ -305,7 +305,7 @@ export default function LoginPage() {
                 className={`
                   flex-1 py-2 px-4 rounded-lg font-medium transition-colors
                   ${loginMethod === 'password'
-                    ? 'bg-amber-600 text-white'
+                    ? 'bg-button-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
                 `}
               >
@@ -321,7 +321,7 @@ export default function LoginPage() {
                 className={`
                   flex-1 py-2 px-4 rounded-lg font-medium transition-colors
                   ${loginMethod === 'otp'
-                    ? 'bg-amber-600 text-white'
+                    ? 'bg-button-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
                 `}
               >
@@ -341,7 +341,7 @@ export default function LoginPage() {
                   {...emailForm.register('email')}
                   className={`
                     w-full px-4 py-3 border rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-amber-500
+                    focus:outline-none focus:ring-2 focus:ring-coffee-500
                     ${emailForm.formState.errors.email ? 'border-red-500' : 'border-gray-300'}
                   `}
                   placeholder="請輸入您的 Email"
@@ -365,8 +365,8 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className={`
                   w-full py-3 px-4 rounded-lg font-medium
-                  bg-amber-600 text-white
-                  hover:bg-amber-700
+                  bg-button-500 text-white
+                  hover:bg-button-600
                   disabled:bg-gray-400 disabled:cursor-not-allowed
                   transition-colors
                 `}
@@ -376,7 +376,7 @@ export default function LoginPage() {
 
               <div className="text-center text-sm text-gray-600">
                 還沒有帳號？{' '}
-                <Link href="/register" className="text-amber-600 hover:text-amber-700 font-medium">
+                <Link href="/register" className="text-coffee-600 hover:text-coffee-700 font-medium">
                   立即註冊
                 </Link>
               </div>
@@ -418,8 +418,8 @@ export default function LoginPage() {
               disabled={isLoading || otpValue.replace(/\s/g, '').length !== 6}
               className={`
                 w-full py-3 px-4 rounded-lg font-medium
-                bg-amber-600 text-white
-                hover:bg-amber-700
+                bg-button-500 text-white
+                hover:bg-button-600
                 disabled:bg-gray-400 disabled:cursor-not-allowed
                 transition-colors
               `}

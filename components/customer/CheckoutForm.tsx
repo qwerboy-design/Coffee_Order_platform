@@ -123,7 +123,7 @@ export default function CheckoutForm() {
         <p className="text-gray-600 mb-4">購物車是空的</p>
         <a
           href="/"
-          className="inline-block bg-amber-600 text-white px-6 py-2 rounded-md hover:bg-amber-700"
+          className="inline-block bg-button-500 text-white px-6 py-2 rounded-md hover:bg-button-600"
         >
           繼續購物
         </a>
@@ -155,7 +155,7 @@ export default function CheckoutForm() {
           <div className="pt-4 border-t">
             <div className="flex justify-between items-center text-xl font-bold">
               <span>總計</span>
-              <span className="text-amber-600">{formatCurrency(getTotal())}</span>
+              <span className="text-coffee-500">{formatCurrency(getTotal())}</span>
             </div>
           </div>
         </div>
@@ -246,7 +246,7 @@ export default function CheckoutForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-amber-600 text-white py-3 rounded-md hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-button-500 text-white py-3 rounded-md hover:bg-button-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? '處理中...' : '送出訂單'}
           </button>

@@ -37,7 +37,7 @@ export default function OrderDetailPage() {
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coffee-600 mx-auto"></div>
         <p className="mt-4 text-gray-600">載入中...</p>
       </div>
     );
@@ -57,7 +57,7 @@ export default function OrderDetailPage() {
         <h1 className="text-3xl font-bold">訂單詳情</h1>
         <a
           href="/admin/orders"
-          className="text-amber-600 hover:text-amber-700"
+          className="text-coffee-600 hover:text-coffee-700"
         >
           ← 返回訂單列表
         </a>
@@ -82,7 +82,7 @@ export default function OrderDetailPage() {
           </div>
           <div>
             <p className="text-gray-600">總金額</p>
-            <p className="font-semibold text-amber-600">
+            <p className="font-semibold text-coffee-600">
               {formatCurrency(order.final_amount)}
             </p>
           </div>
@@ -132,7 +132,7 @@ export default function OrderDetailPage() {
           <div className="pt-4 border-t">
             <div className="flex justify-between items-center text-xl font-bold">
               <span>總計</span>
-              <span className="text-amber-600">{formatCurrency(order.final_amount)}</span>
+              <span className="text-coffee-600">{formatCurrency(order.final_amount)}</span>
             </div>
           </div>
         </div>

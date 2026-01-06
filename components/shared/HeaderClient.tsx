@@ -27,7 +27,7 @@ export function HeaderClient() {
     <>
       <Link
         href="/cart"
-        className="relative text-gray-700 hover:text-amber-600"
+        className="relative text-gray-700 hover:text-coffee-600"
       >
         購物車
         {shouldRenderBadge && (
@@ -36,7 +36,7 @@ export function HeaderClient() {
           </span>
         )}
       </Link>
-      <Link href="/admin/orders" className="text-gray-700 hover:text-amber-600">
+      <Link href="/admin/orders" className="text-gray-700 hover:text-coffee-600">
         後台
       </Link>
     </>

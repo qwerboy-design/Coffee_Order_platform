@@ -51,12 +51,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.description}
         </p>
         <div className="flex items-center justify-between mb-4">
-          <span className="text-2xl font-bold text-amber-600">
+          <span className="text-2xl font-bold text-coffee-500">
             {formatCurrency(product.price)}
           </span>
           <span
-            className={`text-sm ${
-              product.stock > 0 ? 'text-green-600' : 'text-red-600'
+            className={`text-sm font-medium ${
+              product.stock > 0 ? 'text-coral-500' : 'text-red-600'
             }`}
           >
             庫存: {product.stock}
@@ -77,25 +77,41 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className="flex items-center gap-4 mb-4">
-          <label className="text-sm font-medium">數量</label>
+          <label className="text-sm font-medium text-coral-500">數量</label>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center"
+              className="w-8 h-8 border-2 border-coral-500 text-coral-500 rounded flex items-center justify-center hover:bg-coral-50 transition-colors"
             >
               -
             </button>
             <input
               type="number"
               value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => {
+                const inputValue = parseInt(e.target.value) || 1;
+                const maxQuantity = Math.max(1, product.stock);
+                const clampedValue = Math.max(1, Math.min(maxQuantity, inputValue));
+                setQuantity(clampedValue);
+                if (inputValue > maxQuantity) {
+                  alert(`數量不能超過庫存 ${product.stock}`);
+                }
+              }}
               min="1"
               max={product.stock}
-              className="w-16 text-center border border-gray-300 rounded py-1"
+              className="w-16 text-center border-2 border-coral-500 text-coral-500 font-semibold rounded py-1 focus:outline-none focus:ring-2 focus:ring-coral-300"
             />
             <button
-              onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-              className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center"
+              onClick={() => {
+                const maxQuantity = Math.max(1, product.stock);
+                if (quantity >= maxQuantity) {
+                  alert(`數量不能超過庫存 ${product.stock}`);
+                  return;
+                }
+                setQuantity(Math.min(maxQuantity, quantity + 1));
+              }}
+              disabled={quantity >= product.stock}
+              className="w-8 h-8 border-2 border-coral-500 text-coral-500 rounded flex items-center justify-center hover:bg-coral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               +
             </button>
@@ -105,7 +121,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <button
           onClick={handleAddToCart}
           disabled={product.stock === 0 || !product.is_active}
-          className="w-full bg-amber-600 text-white py-2 rounded-md hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-button-500 text-white py-2 rounded-md hover:bg-button-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors shadow-lg border-2 border-button-600"
         >
           {product.stock === 0 ? '缺貨' : '加入購物車'}
         </button>

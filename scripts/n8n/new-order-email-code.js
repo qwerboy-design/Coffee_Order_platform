@@ -193,7 +193,7 @@ const generateEmailHtml = (order) => {
   <div style="text-align: center; margin-top: 30px; color: #9ca3af; font-size: 12px;">
     <p>此為系統自動發送的信件，請勿直接回覆。</p>
     <p>如有任何問題，請聯繫客服。</p>
-    <p style="margin-top: 15px;">© 2024 咖啡豆訂單系統 - 用心烘焙，品味生活</p>
+    <p style="margin-top: 15px;">© 2026 Mike's Coffee Ordering System - 用心烘焙，品味生活</p>
   </div>
   
 </body>
@@ -249,4 +249,7 @@ return {
   customer_email: order.customer_email,
   final_amount: order.final_amount
 };
+
+
+
 

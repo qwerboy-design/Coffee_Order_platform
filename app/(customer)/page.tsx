@@ -33,7 +33,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coffee-600 mx-auto"></div>
         <p className="mt-4 text-gray-600">載入中...</p>
       </div>
     );

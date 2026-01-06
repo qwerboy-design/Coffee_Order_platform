@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #BEE9E8; /* 淺藍綠色背景 */
+  --foreground: #2e2518; /* 深咖啡色文字 */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1a140d; /* 深咖啡色背景 */
+    --foreground: #f5ede4; /* 淺米色文字 */
   }
 }
 
@@ -25,6 +25,9 @@ body {
     text-wrap: balance;
   }
 }
+
+
+
 
 
 

@@ -73,7 +73,7 @@ export default function OrderTracker({ orderId }: OrderTrackerProps) {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       index <= currentStatusIndex
-                        ? 'bg-amber-600 text-white'
+                        ? 'bg-button-500 text-white'
                         : 'bg-gray-300 text-gray-600'
                     }`}
                   >
@@ -84,7 +84,7 @@ export default function OrderTracker({ orderId }: OrderTrackerProps) {
                 {index < statusSteps.length - 1 && (
                   <div
                     className={`flex-1 h-1 mx-2 ${
-                      index < currentStatusIndex ? 'bg-amber-600' : 'bg-gray-300'
+                      index < currentStatusIndex ? 'bg-button-500' : 'bg-gray-300'
                     }`}
                   />
                 )}
@@ -111,7 +111,7 @@ export default function OrderTracker({ orderId }: OrderTrackerProps) {
           <div className="pt-4 border-t">
             <div className="flex justify-between items-center text-xl font-bold">
               <span>總計</span>
-              <span className="text-amber-600">{formatCurrency(order.final_amount)}</span>
+              <span className="text-coffee-600">{formatCurrency(order.final_amount)}</span>
             </div>
           </div>
         </div>

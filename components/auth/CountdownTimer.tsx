@@ -70,7 +70,7 @@ export function CountdownTimer({
       disabled={isResending || !onResend}
       className={`
         text-center text-sm font-medium
-        text-amber-600 hover:text-amber-700
+        text-coffee-600 hover:text-coffee-700
         disabled:text-gray-400 disabled:cursor-not-allowed
         transition-colors
       `}
@@ -79,6 +79,9 @@ export function CountdownTimer({
     </button>
   );
 }
+
+
+
 
 
 

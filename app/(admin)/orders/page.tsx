@@ -48,7 +48,7 @@ export default function OrdersPage() {
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coffee-600 mx-auto"></div>
         <p className="mt-4 text-gray-600">載入中...</p>
       </div>
     );
@@ -74,7 +74,7 @@ export default function OrdersPage() {
           </select>
           <button
             onClick={fetchOrders}
-            className="bg-amber-600 text-white px-4 py-2 rounded-md hover:bg-amber-700"
+            className="bg-coffee-600 text-white px-4 py-2 rounded-md hover:bg-coffee-700"
           >
             重新整理
           </button>

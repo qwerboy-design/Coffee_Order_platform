@@ -10,25 +10,25 @@ export default function AdminLayout({
       <nav className="bg-white shadow-md">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link href="/admin/orders" className="text-xl font-bold text-amber-800">
+            <Link href="/admin/orders" className="text-xl font-bold text-coffee-800">
               後台管理
             </Link>
             <div className="flex gap-4">
               <Link
                 href="/admin/orders"
-                className="text-gray-700 hover:text-amber-600"
+                className="text-gray-700 hover:text-coffee-600"
               >
                 訂單管理
               </Link>
               <Link
                 href="/admin/products"
-                className="text-gray-700 hover:text-amber-600"
+                className="text-gray-700 hover:text-coffee-600"
               >
                 商品管理
               </Link>
               <Link
                 href="/"
-                className="text-gray-700 hover:text-amber-600"
+                className="text-gray-700 hover:text-coffee-600"
               >
                 返回前台
               </Link>

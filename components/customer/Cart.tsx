@@ -13,7 +13,7 @@ export default function Cart() {
         <p className="text-gray-600 dark:text-gray-400 mb-4">購物車是空的</p>
         <Link
           href="/"
-          className="inline-block bg-amber-600 text-white px-6 py-2 rounded-md hover:bg-amber-700"
+          className="inline-block bg-button-500 text-white px-6 py-2 rounded-md hover:bg-button-600"
         >
           繼續購物
         </Link>
@@ -44,7 +44,7 @@ export default function Cart() {
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 研磨: {formatGrindOption(item.grind_option)}
               </p>
-              <p className="text-amber-600 dark:text-amber-400 font-semibold">
+              <p className="text-coffee-600 dark:text-coffee-400 font-semibold">
                 {formatCurrency(item.product.price)} × {item.quantity} ={' '}
                 {formatCurrency(item.product.price * item.quantity)}
               </p>
@@ -55,16 +55,16 @@ export default function Cart() {
                   onClick={() =>
                     updateQuantity(item.product.id, item.grind_option, item.quantity - 1)
                   }
-                  className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center"
+                  className="w-8 h-8 border-2 border-coral-500 text-coral-500 rounded flex items-center justify-center hover:bg-coral-50 transition-colors"
                 >
                   -
                 </button>
-                <span className="w-12 text-center text-gray-900 dark:text-gray-100 font-medium">{item.quantity}</span>
+                <span className="w-12 text-center text-coral-500 dark:text-coral-400 font-semibold">{item.quantity}</span>
                 <button
                   onClick={() =>
                     updateQuantity(item.product.id, item.grind_option, item.quantity + 1)
                   }
-                  className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center"
+                  className="w-8 h-8 border-2 border-coral-500 text-coral-500 rounded flex items-center justify-center hover:bg-coral-50 transition-colors"
                 >
                   +
                 </button>
@@ -83,13 +83,13 @@ export default function Cart() {
       <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg mt-6">
         <div className="flex justify-between items-center mb-4">
           <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">總計</span>
-          <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+          <span className="text-2xl font-bold text-coffee-600 dark:text-coffee-400">
             {formatCurrency(getTotal())}
           </span>
         </div>
         <Link
           href="/checkout"
-          className="block w-full bg-amber-600 text-white text-center py-3 rounded-md hover:bg-amber-700 transition-colors"
+          className="block w-full bg-button-500 text-white text-center py-3 rounded-md hover:bg-button-600 transition-colors"
         >
           前往結帳
         </Link>
