@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <p className="text-white font-medium">
-            © 2026 Mike's Coffee Ordering System. All rights reserved.
+            © 2026 Mike&apos;s Coffee Ordering System. All rights reserved.
           </p>
         </div>
       </div>
