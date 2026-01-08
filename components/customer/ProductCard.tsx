@@ -9,9 +9,10 @@ import { formatCurrency } from '@/lib/utils/format';
 
 interface ProductCardProps {
   product: Product;
+  priority?: boolean;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, priority = false }: ProductCardProps) {
   const [selectedGrind, setSelectedGrind] = useState<GrindOption>(
     product.grind_option || 'none'
   );
@@ -42,6 +43,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             alt={product.name}
             fill
             className="object-cover"
+            priority={priority}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
       )}
