@@ -1,0 +1,242 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/order-created",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -352,
+        0
+      ],
+      "id": "c89ce857-cee6-4357-90d3-61cbb195c75f",
+      "name": "Webhook",
+      "webhookId": "3a010e2c-efb2-4cf7-8e14-af402235756f"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{\n{\n\"order_id\": $json.body.order_id,\n\"customer_name\": $json.body.customer_name,\n\"customer_phone\": $json.body.customer_phone,\n\"customer_email\": $json.body.customer_email,\n\"pickup_method\": $json.body.pickup_method,\n\"payment_method\": $json.body.payment_method,\n\"total_amount\": $json.body.total_amount,\n\"final_amount\": $json.body.final_amount,\n\"order_items\": $json.body.order_items,\n\"notes\": $json.body.notes\n}\n}}",
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -48,
+        160
+      ],
+      "id": "e139df0d-b7de-4937-9a76-17179a381edd",
+      "name": "Edit Fields",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "sendTo": "qwerboy@gmail.com",
+        "subject": "={{ $('Edit Fields').item.json.body.order_id }}",
+        "message": "=<div style=\"font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; color: #333;\">   <h2 style=\"color: #2c3e50; border-left: 5px solid #2c3e50; padding-left: 10px;\">訂單確認通知</h2>      <p><b>訂單 ID：</b><code style=\"background: #eee; padding: 2px 5px;\">{{ $json.order_id }}</code></p>   <p><b>顧客姓名：</b>{{ $json.customer_name }}</p>    <h3 style=\"margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px;\">訂單內容：</h3>      {{ $json.items_table_html }}    <div style=\"background: #f9f9f9; padding: 15px; margin-top: 20px; border-radius: 5px;\">     <p style=\"margin: 5px 0;\"><b>取貨方式：</b>{{ $json.pickup_method }}</p>     <p style=\"margin: 5px 0;\"><b>付款方式：</b>{{ $json.payment_method }}</p>     <p style=\"margin: 5px 0;\"><b>備註事項：</b>{{ $json.notes }}</p>     <p style=\"margin: 10px 0 0 0; font-size: 18px;\">       <b>應付總額：</b>       <span style=\"color: #e74c3c; font-weight: bold;\">{{ $json.final_amount_formatted }}</span>     </p>   </div>      <p style=\"font-size: 12px; color: #888; margin-top: 30px;\">這是一封系統自動發出的郵件，請勿直接回覆。</p> </div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "31111873-b7b0-4020-8df4-e5eada469b28",
+      "name": "Send a message",
+      "webhookId": "945393c2-dbf2-400d-836b-f19a491d135e",
+      "alwaysOutputData": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8S4XPSaE8l1FXOQp",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const order = $input.item.json;\n\n// 轉換函數：取件方式\n\nfunction formatPickupMethod(method) {\n\n  const map = {\n\n    'self_pickup': '自取',\n\n    'delivery': '外送'\n\n  };\n\n  return map[method] || method;\n\n}\n\n\n\n// 轉換函數：付款方式\n\nfunction formatPaymentMethod(method) {\n\n  const map = {\n\n    'cash': '現金',\n\n    'transfer': '轉帳',\n\n    'credit_card': '信用卡'\n\n  };\n\n  return map[method] || method;\n\n}\n\n\n\n// 轉換函數：研磨選項\n\nfunction formatGrindOption(option) {\n\n  const map = {\n\n    'none': '不磨',\n\n    'hand_drip': '磨手沖',\n\n    'espresso': '磨義式'\n\n  };\n\n  return map[option] || option;\n\n}\n\n\n\n// 格式化金額\n\nfunction formatCurrency(amount) {\n\n  return new Intl.NumberFormat('zh-TW', {\n\n    style: 'currency',\n\n    currency: 'TWD',\n\n    minimumFractionDigits: 0\n\n  }).format(amount);\n\n}\n\n\n\n// 處理訂單明細\nconst orderItems = order.order_items.map((item, index) => {\n  const subtotal = item.quantity * item.unit_price;\n  return {\n    index: index + 1,\n    product_name: item.product_name,\n    quantity: item.quantity,\n    unit_price: item.unit_price,\n    grind_option: formatGrindOption(item.grind_option),\n    subtotal: subtotal,\n    subtotal_formatted: formatCurrency(subtotal)\n  };\n});\n\n// --- 新增：將 orderItems 轉換為 HTML 表格字串 ---\nlet itemsTableHtml = `\n<table style=\"width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px;\">\n  <thead>\n    <tr style=\"background-color: #f3f3f3; border-bottom: 2px solid #333;\">\n      <th style=\"padding: 8px; text-align: left;\">商品</th>\n      <th style=\"padding: 8px; text-align: center;\">磨粉</th>\n      <th style=\"padding: 8px; text-align: center;\">數量</th>\n      <th style=\"padding: 8px; text-align: right;\">小計</th>\n    </tr>\n  </thead>\n  <tbody>\n`;\n\norderItems.forEach(item => {\n  itemsTableHtml += `\n    <tr style=\"border-bottom: 1px dotted #ccc;\">\n      <td style=\"padding: 8px;\">${item.product_name}</td>\n      <td style=\"padding: 8px; text-align: center; color: #666;\">${item.grind_option}</td>\n      <td style=\"padding: 8px; text-align: center;\">${item.quantity}</td>\n      <td style=\"padding: 8px; text-align: right;\">${item.subtotal_formatted}</td>\n    </tr>\n  `;\n});\n\nitemsTableHtml += `</tbody></table>`;\n// ------------------------------------------\n\nreturn [{\n  json: {\n    order_id: order.order_id,\n    customer_name: order.customer_name,\n    customer_email: order.customer_email,\n    // ...其他欄位...\n    pickup_method: formatPickupMethod(order.pickup_method),\n    payment_method: formatPaymentMethod(order.payment_method),\n    final_amount_formatted: formatCurrency(order.final_amount),\n    \n    // 將產生的 HTML 傳出去\n    items_table_html: itemsTableHtml, \n    notes: order.notes || '無'\n  }\n}];\n\n\n\n\n// 計算總計\n\nconst totalItems = orderItems.reduce((sum, item) => sum + item.subtotal, 0);\n\n\n\n// 返回格式化後的數據（N8N 需要返回數組格式）\n\nreturn [{\n\n  json: {\n\n    // 訂單基本資訊\n\n    order_id: order.order_id,\n\n    customer_name: order.customer_name,\n\n    customer_phone: order.customer_phone,\n\n    customer_email: order.customer_email,\n\n    \n\n    // 訂單詳情\n\n    pickup_method: formatPickupMethod(order.pickup_method),\n\n    payment_method: formatPaymentMethod(order.payment_method),\n\n    total_amount: order.total_amount,\n\n    total_amount_formatted: formatCurrency(order.total_amount),\n\n    final_amount: order.final_amount,\n\n    final_amount_formatted: formatCurrency(order.final_amount),\n\n    \n\n    // 訂單明細\n\n    order_items: orderItems,\n\n    order_items_count: orderItems.length,\n\n    \n\n    // 備註\n\n    notes: order.notes || '無',\n\n  }\n\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "cfdc9228-032e-4468-aa63-f0a91c0944ef",
+      "name": "Code",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@qwerboy.com",
+        "toEmail": "={{ $json.customer_email }}",
+        "subject": "=訂單確認信件：{{ $('Edit Fields').item.json.body.order_id }}",
+        "html": "=<div style=\"font-family: 'Microsoft JhengHei', sans-serif; max-width: 600px; color: #333;\">   <h2 style=\"color: #2c3e50; border-left: 5px solid #2c3e50; padding-left: 10px;\">訂單確認通知</h2>      <p><b>訂單 ID：</b><code style=\"background: #eee; padding: 2px 5px;\">{{ $json.order_id }}</code></p>   <p><b>顧客姓名：</b>{{ $json.customer_name }}</p>    <h3 style=\"margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px;\">訂單內容：</h3>      {{ $json.items_table_html }}    <div style=\"background: #f9f9f9; padding: 15px; margin-top: 20px; border-radius: 5px;\">     <p style=\"margin: 5px 0;\"><b>取貨方式：</b>{{ $json.pickup_method }}</p>     <p style=\"margin: 5px 0;\"><b>付款方式：</b>{{ $json.payment_method }}</p>     <p style=\"margin: 5px 0;\"><b>備註事項：</b>{{ $json.notes }}</p>     <p style=\"margin: 10px 0 0 0; font-size: 18px;\">       <b>應付總額：</b>       <span style=\"color: #e74c3c; font-weight: bold;\">{{ $json.final_amount_formatted }}</span>     </p>   </div>      <p style=\"font-size: 12px; color: #888; margin-top: 30px;\">這是一封系統自動發出的郵件，請勿直接回覆。</p> </div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        208
+      ],
+      "id": "2b7b14fd-3705-4a5b-98b0-cf1741a27daa",
+      "name": "Send email",
+      "webhookId": "7106d57c-bff6-4c9c-982e-b3a44a92f266",
+      "credentials": {
+        "smtp": {
+          "id": "W4du9wkHrMM53Lbo",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "qwerboy.app.n8n.cloud",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+            "content-length": "683",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "125.227.165.127",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "TW",
+            "cf-ray": "9b582a42b4781ed0-NRT",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "cookie": "rl_page_init_referrer=RudderEncrypt%3AU2FsdGVkX19HtbSxZUz747i0JRlB3m4TcVYdVezIZeI%3D; rl_page_init_referring_domain=RudderEncrypt%3AU2FsdGVkX190hFKFOGXYPCt%2FEavZ01m1skVOxcwKcE0%3D; _2ef60=95cc96b63a5b91db; rl_anonymous_id=RudderEncrypt%3AU2FsdGVkX186aQ91rhQ7GByIJjU8NLJByAsZaHlPF3SnPxFaA%2FZHNfLRtfarMdWvD8IOvRrxOGd64SnNcJ6wTg%3D%3D; rl_user_id=RudderEncrypt%3AU2FsdGVkX1%2FSBnWapWECXdwbl1vW6%2FzjIZbYI2URKtMPLMGkVKQkSupOKFy7a68iB1NO%2FMvWCQu6oRSRJAtLropkSkd%2FoON7SK1K0X5lcb%2F0yydt9Zb%2FJk98SSRUckg8r0ZHOeNdEtYOxPAVVnMVBVh0j%2B0MVWEjhf6ljwY%2Flv8%3D; rl_trait=RudderEncrypt%3AU2FsdGVkX1%2BkOWRfMML%2FinpvLH%2BaWHh1a9FZHARtqim1RLe8aqVetT3Bh7310GyoKGJtY3siTNmMKSLop4v9mx2vcXwvoA4xmlW9GEBC4jmU7d9b8pEd0hiUJ5TyUDzwRMu72D6m%2BgBpN5u5FKvbcYeoCnmacFiV6wuIpi0%2Fjo8ZAZxLDx3bkMO0Re%2F2V98YyIDP4dKLVq9ZCRiUlnmMGw%3D%3D; n8n_anonymous_id=340f15e2-a7b3-4462-a385-dbfaeefde7db; rl_session=RudderEncrypt%3AU2FsdGVkX19NzjJlbnPurF%2FPq4PTxn3j%2BIkmLwjRbghUswvcGHAVgTleHaFH%2F4fth9hidlgUj6N272QyVya%2FkCPu7rJoAmCvu8A3CShHfHpbAkleHZT5VVMep%2F9xSo%2BpsVhgl5j8SIsoXfck4a4vnw%3D%3D; ph_phc_4URIAm1uYfJO7j8kWSe0J8lc8IqnstRLS7Jx8NcakHo_posthog=%7B%22distinct_id%22%3A%222084ac0274f458cd3467a92e9fa9dd5bf3bb4e2cd70ba67bf154f496d82c0389%2390a58e2d-9083-4e9c-8023-510064c54eda%22%2C%22%24sesid%22%3A%5B1766999429929%2C%22019b68f0-c557-75ce-a46d-e464f6a29506%22%2C1766992168279%5D%2C%22%24epp%22%3Atrue%2C%22%24initial_person_info%22%3A%7B%22r%22%3A%22%24direct%22%2C%22u%22%3A%22https%3A%2F%2Fqwerboy.app.n8n.cloud%2Fworkflows%22%7D%7D",
+            "dnt": "1",
+            "origin": "chrome-extension://dmhljjnonlhapikmelaefohecogokhio",
+            "priority": "u=1, i",
+            "referrer-policy": "no-referrer, strict-origin-when-cross-origin",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "none",
+            "sec-fetch-storage-access": "active",
+            "x-forwarded-for": "125.227.165.127, 172.64.215.61",
+            "x-forwarded-host": "qwerboy.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-29-677bf4754f-fc29n",
+            "x-is-trusted": "yes",
+            "x-real-ip": "125.227.165.127"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "order_id": "ORD-20251228-TEST",
+            "customer_name": "測試客戶",
+            "customer_phone": "0987654321",
+            "customer_email": "test@example.com",
+            "pickup_method": "self_pickup",
+            "payment_method": "cash",
+            "total_amount": 1500,
+            "final_amount": 1500,
+            "order_items": [
+              {
+                "product_name": "AA",
+                "quantity": 2,
+                "unit_price": 500,
+                "grind_option": "hand_drip"
+              },
+              {
+                "product_name": "AA",
+                "quantity": 1,
+                "unit_price": 500,
+                "grind_option": "none"
+              }
+            ],
+            "notes": "測試訂單"
+          },
+          "webhookUrl": "https://qwerboy.app.n8n.cloud/webhook-test/order-created",
+          "executionMode": "test"
+        }
+      }
+    ],
+    "Send a message": [
+      {
+        "json": {
+          "id": "19b6e618c7889750",
+          "threadId": "19b6e618c7889750",
+          "labelIds": [
+            "UNREAD",
+            "SENT",
+            "INBOX"
+          ]
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true
+  },
+  "versionId": "9e724835-0ebf-4c1c-8f00-c8f1bdbe71e7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2084ac0274f458cd3467a92e9fa9dd5bf3bb4e2cd70ba67bf154f496d82c0389"
+  },
+  "id": "Cy2ywkgiUQEb6DPY",
+  "tags": []
+}

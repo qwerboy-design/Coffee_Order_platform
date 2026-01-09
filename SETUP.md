@@ -241,6 +241,27 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - 確保「Authorized JavaScript origins」和「Authorized redirect URIs」正確設定
 - 本機開發使用 `http://localhost:3000`（不需要 `/` 結尾）
 - 生產環境使用完整的 Vercel URL
+- **移動端設定**：確保生產環境的網域已添加到 Authorized JavaScript origins（包含 `https://` 協議）
+- **WebView 問題**：如果用戶在應用程式內建瀏覽器（LINE、Facebook 等）中遇到 `403: disallowed_useragent` 錯誤，請引導他們使用標準瀏覽器（Chrome、Safari）
+
+### 5. 移動端 OAuth 設定（重要）
+
+如果您的應用需要在手機上使用 Google 登入，請確保：
+
+1. **Authorized JavaScript origins** 包含：
+   - 生產環境網域：`https://your-domain.com`
+   - 開發環境：`http://localhost:3000`
+
+2. **Authorized redirect URIs** 包含：
+   - 生產環境：`https://your-domain.com` 和 `https://your-domain.com/api/auth/google`
+   - 開發環境：`http://localhost:3000` 和 `http://localhost:3000/api/auth/google`
+
+3. **WebView 限制**：
+   - Google OAuth 不支援在應用程式內建瀏覽器（WebView）中使用
+   - 如果用戶在 LINE、Facebook、Instagram 等應用中開啟，會看到提示訊息
+   - 建議用戶使用標準瀏覽器（Chrome、Safari）進行登入
+
+**詳細說明請參考**：[移動端 OAuth 設定指南](docs/MOBILE_OAUTH_SETUP.md)
 
 ## 五、本地開發
 
