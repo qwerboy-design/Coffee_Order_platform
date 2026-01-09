@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { updateProfileSchema } from '@/lib/validation/schemas';
 import { LinkGoogleButton } from '@/components/auth/LinkGoogleButton';
+import type { z } from 'zod';
 
 interface CustomerProfile {
   id: string;
@@ -18,6 +22,8 @@ interface CustomerProfile {
   created_at?: string;
 }
 
+type ProfileFormData = z.infer<typeof updateProfileSchema>;
+
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
@@ -25,11 +31,32 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    setValue,
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(updateProfileSchema),
+  });
 
   // 載入用戶資料
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  // 當 profile 載入後，設定表單預設值（使用登入信箱）
+  useEffect(() => {
+    if (profile) {
+      setValue('name', profile.name);
+      setValue('phone', profile.phone);
+      setValue('email', profile.email); // 使用登入信箱帶入
+    }
+  }, [profile, setValue]);
 
   const fetchProfile = async () => {
     setIsLoading(true);
@@ -50,6 +77,49 @@ export default function ProfilePage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 提交表單更新個人資料
+  const onSubmit = async (formData: ProfileFormData) => {
+    setIsSaving(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch('/api/customers/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccessMessage('個人資料已更新');
+        setIsEditing(false);
+        // 重新載入資料
+        await fetchProfile();
+      } else {
+        setError(data.error || '更新失敗');
+      }
+    } catch (err) {
+      setError('網路錯誤，請稍後再試');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 取消編輯
+  const handleCancelEdit = () => {
+    if (profile) {
+      reset({
+        name: profile.name,
+        phone: profile.phone,
+        email: profile.email,
+      });
+    }
+    setIsEditing(false);
+    setError(null);
   };
 
   // 綁定 Google 帳號成功
@@ -144,36 +214,126 @@ export default function ProfilePage() {
 
       {/* 基本資料 */}
       <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">基本資料</h2>
-        
-        <div className="space-y-4">
-          <div className="flex items-center">
-            <span className="text-gray-600 w-32">姓名：</span>
-            <span className="text-gray-800 font-medium">{profile.name}</span>
-          </div>
-          
-          <div className="flex items-center">
-            <span className="text-gray-600 w-32">Email：</span>
-            <span className="text-gray-800 font-medium">{profile.email}</span>
-          </div>
-          
-          <div className="flex items-center">
-            <span className="text-gray-600 w-32">電話：</span>
-            <span className="text-gray-800 font-medium">
-              {profile.phone || <span className="text-gray-400">尚未設定</span>}
-            </span>
-          </div>
-          
-          <div className="flex items-center">
-            <span className="text-gray-600 w-32">註冊方式：</span>
-            <span className="text-gray-800 font-medium">
-              {profile.auth_provider === 'google' && 'Google 帳號'}
-              {profile.auth_provider === 'email' && 'Email + 密碼'}
-              {profile.auth_provider === 'otp' && 'OTP 驗證碼'}
-              {!profile.auth_provider && '未知'}
-            </span>
-          </div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-800">基本資料</h2>
+          {!isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-4 py-2 text-sm text-coffee-600 border border-coffee-600 rounded-lg hover:bg-coffee-50 transition-colors"
+            >
+              編輯
+            </button>
+          )}
         </div>
+        
+        {isEditing ? (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                姓名
+              </label>
+              <input
+                {...register('name')}
+                type="text"
+                id="name"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-coffee-500 focus:border-transparent"
+                placeholder="請輸入姓名"
+              />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email（登入信箱）
+              </label>
+              <input
+                {...register('email')}
+                type="email"
+                id="email"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-coffee-500 focus:border-transparent bg-gray-50"
+                placeholder="請輸入 Email"
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">此為您的登入信箱</p>
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                電話
+              </label>
+              <input
+                {...register('phone')}
+                type="tel"
+                id="phone"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-coffee-500 focus:border-transparent"
+                placeholder="請輸入電話（09xxxxxxxx）"
+              />
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+              )}
+            </div>
+
+            <div className="flex items-center">
+              <span className="text-gray-600 w-32">註冊方式：</span>
+              <span className="text-gray-800 font-medium">
+                {profile.auth_provider === 'google' && 'Google 帳號'}
+                {profile.auth_provider === 'email' && 'Email + 密碼'}
+                {profile.auth_provider === 'otp' && 'OTP 驗證碼'}
+                {!profile.auth_provider && '未知'}
+              </span>
+            </div>
+
+            <div className="flex justify-end space-x-4 pt-4">
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-6 py-2 text-white bg-coffee-600 rounded-lg hover:bg-coffee-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isSaving ? '儲存中...' : '儲存'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <span className="text-gray-600 w-32">姓名：</span>
+              <span className="text-gray-800 font-medium">{profile.name}</span>
+            </div>
+            
+            <div className="flex items-center">
+              <span className="text-gray-600 w-32">Email：</span>
+              <span className="text-gray-800 font-medium">{profile.email}</span>
+            </div>
+            
+            <div className="flex items-center">
+              <span className="text-gray-600 w-32">電話：</span>
+              <span className="text-gray-800 font-medium">
+                {profile.phone || <span className="text-gray-400">尚未設定</span>}
+              </span>
+            </div>
+            
+            <div className="flex items-center">
+              <span className="text-gray-600 w-32">註冊方式：</span>
+              <span className="text-gray-800 font-medium">
+                {profile.auth_provider === 'google' && 'Google 帳號'}
+                {profile.auth_provider === 'email' && 'Email + 密碼'}
+                {profile.auth_provider === 'otp' && 'OTP 驗證碼'}
+                {!profile.auth_provider && '未知'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 帳號綁定 */}

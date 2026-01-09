@@ -1,0 +1,63 @@
+# 忽略依賴
+node_modules/
+venv/
+.venv/
+
+# 忽略構建結果
+dist/
+build/
+.next/
+out/
+
+# 忽略大型資源與日誌
+*.log
+*.mp4
+*.svg
+*.png
+assets/
+data/
+datasets/
+
+# 忽略 IDE 與系統緩存
+.vscode/
+.idea/
+.DS_Store
+.cache/
+
+# Next.js 核心構建產物 (最佔 Token)
+.next/
+out/
+build/
+
+# 依賴庫
+node_modules/
+
+# 靜態資源 (除非要 AI 修改圖片，否則請忽略)
+public/assets/
+public/images/
+public/fonts/
+
+# 快取與日誌
+.vercel/
+.npm/
+*.log
+.eslintcache
+.stylelintcache
+
+# 測試覆蓋率報告
+coverage/
+
+# 環境變數 (保護隱私且節省 Token)
+.env*
+!.env.example
+
+# 強制忽略 Next.js 編譯產物
+.next/
+out/
+
+
+# 忽略 Git 歷史
+.git/
+
+# 如果未來有 public 目錄也先忽略
+public/

@@ -139,3 +139,10 @@ export const passwordStrengthSchema = z.object({
   };
 });
 
+// 更新個人資料 Schema
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, '姓名至少需要 2 個字元').max(100, '姓名過長').optional(),
+  phone: z.string().regex(/^09\d{8}$/, '請輸入有效的台灣手機號碼（09xxxxxxxx）').optional(),
+  email: z.string().email('請輸入有效的 Email').optional(),
+});
+
