@@ -359,6 +359,47 @@ export async function findCustomerByOAuthId(oauthId: string): Promise<Customer |
 }
 
 /**
+ * 更新客戶基本資料
+ */
+export async function updateCustomerProfile(
+  customerId: string,
+  data: { name?: string; phone?: string; email?: string }
+): Promise<Customer> {
+  try {
+    const updateData: Record<string, any> = {};
+    
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+    }
+    
+    if (data.phone !== undefined) {
+      updateData.phone = data.phone;
+    }
+    
+    if (data.email !== undefined) {
+      updateData.email = data.email.toLowerCase().trim();
+    }
+
+    const { data: updated, error } = await supabaseAdmin
+      .from(TABLES.CUSTOMERS)
+      .update(updateData)
+      .eq('id', customerId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[updateCustomerProfile] Error:', error);
+      throw error;
+    }
+
+    return mapCustomerRecord(updated);
+  } catch (error) {
+    console.error('[updateCustomerProfile] Error:', error);
+    throw new Error('更新客戶資料失敗');
+  }
+}
+
+/**
  * 映射資料庫記錄到 Customer 類型
  */
 function mapCustomerRecord(record: any): Customer {
