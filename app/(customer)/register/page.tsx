@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { OTPInput } from '@/components/auth/OTPInput';
 import { CountdownTimer } from '@/components/auth/CountdownTimer';
 import { GoogleLoginButton } from '@/components/auth/GoogleLoginButton';
+import { getPasswordStrength } from '@/lib/auth/password-strength';
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -23,12 +24,23 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otpError, setOtpError] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
+  const [usePassword, setUsePassword] = useState(false);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
 
-  // 註冊並發送 OTP
+  const password = form.watch('password');
+
+  // 監控密碼變化，計算強度
+  useEffect(() => {
+    if (password) {
+      setPasswordStrength(getPasswordStrength(password));
+    }
+  }, [password]);
+
+  // 註冊並發送 OTP 或使用密碼註冊
   const handleRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
     setError(null);
@@ -43,8 +55,15 @@ export default function RegisterPage() {
       const result = await response.json();
 
       if (result.success) {
-        setEmail(data.email);
-        setStep('otp');
+        // 如果提供了密碼，直接完成註冊並登入
+        if (data.password) {
+          router.push('/');
+          router.refresh();
+        } else {
+          // 否則使用 OTP 驗證流程
+          setEmail(data.email);
+          setStep('otp');
+        }
       } else {
         setError(result.error || '註冊失敗，請稍後再試');
       }
@@ -214,6 +233,102 @@ export default function RegisterPage() {
               )}
             </div>
 
+            {/* 密碼註冊選項 */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="usePassword"
+                checked={usePassword}
+                onChange={(e) => {
+                  setUsePassword(e.target.checked);
+                  if (!e.target.checked) {
+                    form.setValue('password', undefined);
+                    form.setValue('confirmPassword', undefined);
+                  }
+                }}
+                className="w-4 h-4 text-coffee-600 border-gray-300 rounded focus:ring-coffee-500"
+              />
+              <label htmlFor="usePassword" className="ml-2 text-sm text-gray-700">
+                設定密碼（設定後可直接使用密碼登入，無需驗證碼）
+              </label>
+            </div>
+
+            {usePassword && (
+              <>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    密碼 *
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    {...form.register('password')}
+                    className={`
+                      w-full px-4 py-3 border rounded-lg
+                      focus:outline-none focus:ring-2 focus:ring-coffee-500
+                      ${form.formState.errors.password ? 'border-red-500' : 'border-gray-300'}
+                    `}
+                    placeholder="至少 8 個字元，包含字母和數字"
+                    disabled={isLoading}
+                    onChange={(e) => {
+                      form.register('password').onChange(e);
+                      if (e.target.value) {
+                        setPasswordStrength(getPasswordStrength(e.target.value));
+                      }
+                    }}
+                  />
+                  {form.formState.errors.password && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.password.message}
+                    </p>
+                  )}
+                  {password && password.length > 0 && (
+                    <div className="mt-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all ${
+                              passwordStrength === 'weak' ? 'bg-red-500' :
+                              passwordStrength === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}
+                            style={{
+                              width: passwordStrength === 'weak' ? '33%' : passwordStrength === 'medium' ? '66%' : '100%'
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-600">
+                          密碼強度：{passwordStrength === 'weak' ? '弱' : passwordStrength === 'medium' ? '中' : '強'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    確認密碼 *
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    {...form.register('confirmPassword')}
+                    className={`
+                      w-full px-4 py-3 border rounded-lg
+                      focus:outline-none focus:ring-2 focus:ring-coffee-500
+                      ${form.formState.errors.confirmPassword ? 'border-red-500' : 'border-gray-300'}
+                    `}
+                    placeholder="請再次輸入密碼"
+                    disabled={isLoading}
+                  />
+                  {form.formState.errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-sm text-red-600">{error}</p>
@@ -231,14 +346,28 @@ export default function RegisterPage() {
                 transition-colors
               `}
             >
-              {isLoading ? '註冊中...' : '註冊並發送驗證碼'}
+              {isLoading 
+                ? '註冊中...' 
+                : usePassword 
+                  ? '註冊' 
+                  : '註冊並發送驗證碼'}
             </button>
 
-            <div className="text-center text-sm text-gray-600">
-              已經有帳號？{' '}
-              <Link href="/login" className="text-coffee-600 hover:text-coffee-700 font-medium">
-                立即登入
-              </Link>
+            <div className="text-center space-y-2">
+              <div className="text-sm text-gray-600">
+                已經有帳號？{' '}
+                <Link href="/login" className="text-coffee-600 hover:text-coffee-700 font-medium">
+                  立即登入
+                </Link>
+              </div>
+              {!usePassword && (
+                <div className="text-sm text-gray-600">
+                  或{' '}
+                  <Link href="/register-password" className="text-coffee-600 hover:text-coffee-700 font-medium">
+                    使用密碼註冊
+                  </Link>
+                </div>
+              )}
             </div>
           </form>
           </>

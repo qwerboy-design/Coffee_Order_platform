@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
 
     // 2. 查詢用戶
     const customer = await findCustomerByEmail(email);
+
     if (!customer) {
       return NextResponse.json(
         createErrorResponse(AuthErrorCode.UNAUTHORIZED, '帳號或密碼錯誤'),
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         createErrorResponse(
           AuthErrorCode.UNAUTHORIZED,
-          '此帳號未設定密碼，請使用 OTP 驗證碼登入'
+          '此帳號未設定密碼，請使用 OTP 驗證碼登入或前往註冊頁面設定密碼'
         ),
         { status: 401 }
       );
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
 
     // 4. 驗證密碼
     const isValidPassword = await verifyPassword(password, customer.password_hash);
+
     if (!isValidPassword) {
       return NextResponse.json(
         createErrorResponse(AuthErrorCode.UNAUTHORIZED, '帳號或密碼錯誤'),

@@ -106,9 +106,16 @@ export default function LoginPage() {
         router.refresh();
       } else {
         setError(result.error || '登入失敗，請稍後再試');
+        // 清除密碼欄位，讓用戶重新輸入
+        setTimeout(() => {
+          passwordForm.setValue('password', '', { shouldValidate: false, shouldDirty: false });
+        }, 0);
       }
     } catch (err) {
       setError('網路錯誤，請稍後再試');
+      setTimeout(() => {
+        passwordForm.setValue('password', '', { shouldValidate: false, shouldDirty: false });
+      }, 0);
     } finally {
       setIsLoading(false);
     }
@@ -248,6 +255,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   {...passwordForm.register('password')}
+                  autoComplete="current-password"
                   className={`
                     w-full px-4 py-3 border rounded-lg
                     focus:outline-none focus:ring-2 focus:ring-coffee-500

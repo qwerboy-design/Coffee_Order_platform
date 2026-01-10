@@ -93,19 +93,30 @@ export const verifyOTPSchema = z.object({
   otp_code: z.string().length(6, '驗證碼為 6 位數').regex(/^\d{6}$/, '驗證碼只能包含數字'),
 });
 
-export const registerSchema = z.object({
-  email: z.string().email('請輸入有效的 Email'),
-  name: z.string().min(2, '姓名至少需要 2 個字元').max(100, '姓名過長'),
-  phone: z.string().regex(/^09\d{8}$/, '請輸入有效的台灣手機號碼（09xxxxxxxx）'),
-});
-
-// 密碼相關 Schema
+// 密碼相關 Schema（必須在 registerSchema 之前定義）
 // 密碼政策：最小 8 字元，至少包含數字和字母
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/;
 
 export const passwordSchema = z.string()
   .min(8, '密碼至少需要 8 個字元')
   .regex(passwordRegex, '密碼必須包含至少一個字母和一個數字');
+
+export const registerSchema = z.object({
+  email: z.string().email('請輸入有效的 Email'),
+  name: z.string().min(2, '姓名至少需要 2 個字元').max(100, '姓名過長'),
+  phone: z.string().regex(/^09\d{8}$/, '請輸入有效的台灣手機號碼（09xxxxxxxx）'),
+  password: passwordSchema.optional(),
+  confirmPassword: z.string().optional(),
+}).refine((data) => {
+  // 如果提供了密碼，則確認密碼也必須提供且一致
+  if (data.password) {
+    return data.confirmPassword === data.password;
+  }
+  return true;
+}, {
+  message: '密碼與確認密碼不一致',
+  path: ['confirmPassword'],
+});
 
 export const registerWithPasswordSchema = z.object({
   email: z.string().email('請輸入有效的 Email'),

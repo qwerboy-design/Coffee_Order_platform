@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { registerSchema } from '@/lib/validation/schemas';
-import { findCustomerByEmail, getCustomerByPhone, createOrUpdateCustomer } from '@/lib/supabase/customers';
+import { findCustomerByEmail, getCustomerByPhone, createOrUpdateCustomer, createCustomerWithPassword } from '@/lib/supabase/customers';
 import { createOTPToken } from '@/lib/supabase/otp';
 import { sendOTPEmail } from '@/lib/email/resend';
+import { hashPassword } from '@/lib/auth/utils';
+import { createSession } from '@/lib/auth/session';
 import { checkIPRateLimit, checkEmailRateLimit, getClientIP } from '@/lib/rate-limit';
 import { createErrorResponse, createSuccessResponse, AuthErrorCode } from '@/lib/errors';
 
@@ -14,7 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validatedData = registerSchema.parse(body);
-    const { email, name, phone } = validatedData;
+    const { email, name, phone, password } = validatedData;
 
     // 1. Rate Limiting 檢查
     const clientIP = getClientIP(request);
@@ -55,7 +57,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. 建立客戶記錄
+    // 4. 如果提供了密碼，使用密碼註冊方式
+    if (password) {
+      try {
+        // 加密密碼
+        const password_hash = await hashPassword(password);
+        
+        // 建立客戶記錄（包含密碼）
+        const customer = await createCustomerWithPassword({
+          email,
+          name,
+          phone,
+          password_hash,
+          auth_provider: 'email',
+        });
+
+        // 建立 Session（自動登入）
+        const clientIP = getClientIP(request);
+        await createSession(customer.id, customer.email, clientIP);
+
+        return NextResponse.json(
+          createSuccessResponse(
+            {
+              userId: customer.id,
+              email: customer.email,
+              name: customer.name,
+            },
+            '註冊成功'
+          )
+        );
+      } catch (error) {
+        // 處理重複 Email 或電話的錯誤
+        if (error instanceof Error) {
+          if (error.message.includes('Email 已被註冊')) {
+            return NextResponse.json(
+              createErrorResponse(AuthErrorCode.EMAIL_ALREADY_EXISTS),
+              { status: 409 }
+            );
+          }
+          if (error.message.includes('電話已被使用')) {
+            return NextResponse.json(
+              createErrorResponse(AuthErrorCode.PHONE_ALREADY_EXISTS),
+              { status: 409 }
+            );
+          }
+        }
+        console.error('Error creating customer with password:', error);
+        return NextResponse.json(
+          createErrorResponse(
+            AuthErrorCode.INTERNAL_ERROR,
+            '建立客戶記錄失敗，請稍後再試'
+          ),
+          { status: 500 }
+        );
+      }
+    }
+
+    // 5. 如果沒有提供密碼，使用 OTP 註冊方式
     let customer;
     try {
       console.log('Creating customer with data:', {
@@ -76,9 +134,6 @@ export async function POST(request: NextRequest) {
         name: customer.name
       });
       
-      // 不再立即驗證，信任 createOrUpdateCustomer 的結果
-      // 因為 Supabase 的回應已經包含了建立的客戶資料
-      
     } catch (error) {
       console.error('Error creating customer:', error);
       return NextResponse.json(
@@ -90,7 +145,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. 建立並發送 OTP
+    // 6. 建立並發送 OTP
     try {
       // 生成 OTP Code
       const { generateOTP } = require('@/lib/auth/otp-generator');
