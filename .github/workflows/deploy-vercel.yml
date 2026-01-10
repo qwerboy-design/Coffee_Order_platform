@@ -3,9 +3,11 @@ name: Deploy to Vercel
 on:
   push:
     branches:
+      - master
       - main
   pull_request:
     branches:
+      - master
       - main
 
 jobs:
@@ -25,9 +27,6 @@ jobs:
       
       - name: Build
         run: npm run build
-        env:
-          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
-          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
       
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25

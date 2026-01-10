@@ -28,41 +28,38 @@ export async function getCustomerByPhone(phone: string): Promise<Customer | null
 
 /**
  * 根據 Email 查詢客戶
+ * 如果有多筆相同 email 的記錄，優先選取有密碼的那筆
  */
 export async function findCustomerByEmail(email: string): Promise<Customer | null> {
   try {
     const normalizedEmail = email.toLowerCase().trim();
-    console.log('[findCustomerByEmail] Searching for:', {
-      originalEmail: email,
-      normalizedEmail,
-    });
     
-    const { data, error } = await supabaseAdmin
+    // 使用 select() 而非 single() 來處理多筆記錄的情況
+    const { data: allMatches, error: allError } = await supabaseAdmin
       .from(TABLES.CUSTOMERS)
       .select('*')
       .eq('email', normalizedEmail)
-      .single();
+      .order('created_at', { ascending: false }); // 最新的在前面
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        console.log('[findCustomerByEmail] Customer not found:', normalizedEmail);
-        return null; // 找不到記錄
-      }
-      console.error('[findCustomerByEmail] Supabase error:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-      });
-      throw error;
+    if (allError) {
+      console.error('[findCustomerByEmail] Supabase error:', allError);
+      throw allError;
     }
 
-    console.log('[findCustomerByEmail] Customer found:', {
-      id: data.id,
-      email: data.email,
-    });
+    if (!allMatches || allMatches.length === 0) {
+      return null;
+    }
+
+    // 如果有多筆記錄，優先選取有密碼的那筆
+    let selectedRecord = allMatches[0]; // 預設取最新的
+    if (allMatches.length > 1) {
+      const withPassword = allMatches.find(m => m.password_hash);
+      if (withPassword) {
+        selectedRecord = withPassword;
+      }
+    }
     
-    return mapCustomerRecord(data);
+    return mapCustomerRecord(selectedRecord);
   } catch (error) {
     console.error('[findCustomerByEmail] Error:', error);
     return null;
@@ -75,7 +72,7 @@ export async function findCustomerByEmail(email: string): Promise<Customer | nul
 export async function createOrUpdateCustomer(data: CreateCustomerRequest): Promise<Customer> {
   try {
     console.log('[createOrUpdateCustomer] Starting with data:', {
-      email: data.email.toLowerCase(),
+      email: data.email.toLowerCase().trim(),
       name: data.name,
       phone: data.phone,
     });
@@ -91,7 +88,7 @@ export async function createOrUpdateCustomer(data: CreateCustomerRequest): Promi
         .from(TABLES.CUSTOMERS)
         .update({
           name: data.name,
-          email: data.email.toLowerCase(),
+          email: data.email.toLowerCase().trim(),
         })
         .eq('id', existing.id)
         .select()
@@ -118,7 +115,7 @@ export async function createOrUpdateCustomer(data: CreateCustomerRequest): Promi
       const insertData = {
         name: data.name,
         phone: data.phone,
-        email: data.email.toLowerCase(),
+        email: data.email.toLowerCase().trim(),
         auth_provider: (data.auth_provider as AuthProvider) || 'otp',
       };
       console.log('[createOrUpdateCustomer] Insert data:', insertData);
@@ -171,20 +168,26 @@ export async function createCustomerWithPassword(
     }
 
     // 建立新客戶
+    const insertData = {
+      name: data.name,
+      phone: data.phone,
+      email: data.email.toLowerCase().trim(),
+      password_hash: data.password_hash,
+      auth_provider: (data.auth_provider as AuthProvider) || 'email',
+      email_verified: false,
+    };
+
     const { data: created, error } = await supabaseAdmin
       .from(TABLES.CUSTOMERS)
-      .insert({
-        name: data.name,
-        phone: data.phone,
-        email: data.email.toLowerCase(),
-        password_hash: data.password_hash,
-        auth_provider: (data.auth_provider as AuthProvider) || 'email',
-        email_verified: false,
-      })
+      .insert(insertData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[createCustomerWithPassword] Insert error:', error);
+      throw error;
+    }
+
     return mapCustomerRecord(created);
   } catch (error) {
     console.error('Error creating customer with password:', error);
