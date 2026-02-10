@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 import { config as appConfig } from '@/lib/config';
 
 // 需要登入才能訪問的路由
-const protectedRoutes = ['/profile', '/orders', '/settings'];
+const protectedRoutes = ['/profile', '/orders', '/settings', '/admin'];
 
 // 已登入用戶不應訪問的路由（應重定向到首頁）
 const authRoutes = ['/login', '/register'];

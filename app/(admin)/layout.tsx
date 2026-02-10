@@ -1,10 +1,17 @@
 import Link from 'next/link';
 
-export default function AdminLayout({
+import { redirect } from 'next/navigation';
+import { getCurrentAdmin } from '@/lib/auth/admin';
+
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    redirect('/');
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-md">
