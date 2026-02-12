@@ -8,6 +8,7 @@ const envSchema = z.object({
   // Resend Email Service
   RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
   RESEND_FROM_EMAIL: z.string().email('RESEND_FROM_EMAIL must be a valid email'),
+  ADMIN_EMAIL: z.string().email('ADMIN_EMAIL must be a valid email'),
 
   // JWT Secret（至少 32 字元）
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
@@ -35,6 +36,7 @@ try {
     env = {
       RESEND_API_KEY: 'build-time-placeholder',
       RESEND_FROM_EMAIL: 'noreply@example.com',
+      ADMIN_EMAIL: 'admin@example.com',
       JWT_SECRET: 'build-time-placeholder-32-chars-minimum',
       NODE_ENV: 'development',
       NEXT_PUBLIC_APP_URL: undefined,
@@ -52,7 +54,7 @@ try {
         return `${varName}: ${varMessage}`;
       });
       const errorMessage = `環境變數驗證失敗：\n${missingVars.join('\n')}\n\n` +
-        (process.env.VERCEL 
+        (process.env.VERCEL
           ? '請前往 Vercel Dashboard → Settings → Environment Variables 設定所有必要的環境變數。'
           : '請在 .env.local 文件中設定所有必要的環境變數。');
       throw new Error(errorMessage);
@@ -69,6 +71,7 @@ export const config = {
   resend: {
     apiKey: env.RESEND_API_KEY,
     fromEmail: env.RESEND_FROM_EMAIL,
+    adminEmail: env.ADMIN_EMAIL,
   },
   jwt: {
     secret: env.JWT_SECRET,

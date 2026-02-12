@@ -45,3 +45,6 @@ Content.IE5/
 
 
 
+
+.vercel
+.env*.local

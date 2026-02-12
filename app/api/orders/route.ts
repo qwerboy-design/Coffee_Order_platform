@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createOrder, getOrders } from '@/lib/supabase/orders';
 import { createOrderSchema } from '@/lib/validation/schemas';
-import { 
-  triggerOrderCreatedWebhook, 
+import { sendOrderEmailToBuyer, sendOrderEmailToSeller } from '@/lib/email/resend';
+import {
+  triggerOrderCreatedWebhook,
   formatGrindOptionForDisplay,
   formatPickupMethodForDisplay,
   formatPaymentMethodForDisplay,
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     // 驗證資料
     const validatedData = createOrderSchema.parse(body);
 
@@ -67,13 +68,23 @@ export async function POST(request: NextRequest) {
       console.error('Webhook error (non-blocking):', error);
     });
 
+    // 發送訂單確認郵件給買家（非同步，不等待結果）
+    sendOrderEmailToBuyer(order).catch((error) => {
+      console.error('Buyer email error (non-blocking):', error);
+    });
+
+    // 發送訂單通知郵件給賣家（非同步，不等待結果）
+    sendOrderEmailToSeller(order).catch((error) => {
+      console.error('Seller email error (non-blocking):', error);
+    });
+
     return NextResponse.json(
       { success: true, data: order },
       { status: 201 }
     );
   } catch (error) {
     console.error('Error creating order:', error);
-    
+
     // 確保總是返回有效的 JSON 回應
     try {
       if (error instanceof Error && error.name === 'ZodError') {
