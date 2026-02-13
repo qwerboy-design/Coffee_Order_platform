@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createProduct, updateProduct } from '@/app/actions/admin/products';
 import { ProductOption, ProductVariant, AdminProduct, CreateProductInput } from '@/types/admin-product';
+import type { ProductCategoryOption } from '@/lib/supabase/categories';
 import ImageUpload from '@/components/ui/ImageUpload';
 import VariantManager from './VariantManager';
 import { useToast } from '@/components/ui/Toaster';
@@ -16,17 +17,19 @@ const productSchema = z.object({
     description: z.string().optional(),
     price: z.number().min(0, '價格不能小於 0'),
     stock: z.number().min(0, '庫存不能小於 0'),
-    // category_id: z.string().optional(),
+    category_id: z.string().min(1, '請選擇商品選項'),
 });
 
 interface ProductFormProps {
     initialData?: AdminProduct;
+    categories?: ProductCategoryOption[];
 }
 
-export default function ProductForm({ initialData }: ProductFormProps) {
+export default function ProductForm({ initialData, categories = [] }: ProductFormProps) {
     const router = useRouter();
     const { toast, error: toastError, success } = useToast();
     const [loading, setLoading] = useState(false);
+    const categoryList = Array.isArray(categories) ? categories : [];
 
     const [images, setImages] = useState<string[]>(initialData?.images?.map(i => i.url) || []);
     const [videoUrl, setVideoUrl] = useState(initialData?.video_url || '');
@@ -42,8 +45,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             description: initialData?.description || '',
             price: initialData?.price || 0,
             stock: initialData?.stock || 0,
+            category_id: initialData?.category_id || '',
         },
-        mode: 'onSubmit' // Validate on submit
+        mode: 'onSubmit'
     });
 
     const basePrice = watch('price');
@@ -68,7 +72,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 is_active: true,
                 options: enableVariants ? options : [],
                 variants: enableVariants ? variants : [],
-                category_id: initialData?.category_id
+                category_id: data.category_id
             };
 
             let result;
@@ -131,6 +135,27 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                                     <label className="block text-sm font-medium text-gray-700">商品名稱</label>
                                     <input {...register('name')} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border focus:ring-coffee-500 focus:border-coffee-500" />
                                     {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message as string}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">商品選項 <span className="text-red-500">*</span></label>
+                                    <select
+                                        {...register('category_id')}
+                                        className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm p-2 focus:ring-coffee-500 focus:border-coffee-500 min-h-[42px]"
+                                        disabled={categoryList.length === 0}
+                                    >
+                                        <option value="">
+                                            {categoryList.length === 0
+                                                ? '尚無選項（請執行 migration 011 新增食品、3C、器具、咖啡豆）'
+                                                : '請選擇商品選項'}
+                                        </option>
+                                        {categoryList.map((c) => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                    {categoryList.length === 0 && (
+                                        <p className="text-amber-600 text-xs mt-1">在 Supabase 執行 supabase/migrations/011_seed_product_options_food_3c_tools_coffee.sql 後即會出現選項</p>
+                                    )}
+                                    {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id.message as string}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">商品描述</label>

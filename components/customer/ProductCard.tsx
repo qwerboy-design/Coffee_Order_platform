@@ -66,18 +66,20 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
           </span>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">研磨選項</label>
-          <select
-            value={selectedGrind}
-            onChange={(e) => setSelectedGrind(e.target.value as GrindOption)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-          >
-            <option value="none">{grindLabels.none}</option>
-            <option value="hand_drip">{grindLabels.hand_drip}</option>
-            <option value="espresso">{grindLabels.espresso}</option>
-          </select>
-        </div>
+        {product.category_slug === 'coffee-beans' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">研磨選項（選填）</label>
+            <select
+              value={selectedGrind}
+              onChange={(e) => setSelectedGrind(e.target.value as GrindOption)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+            >
+              <option value="none">{grindLabels.none}</option>
+              <option value="hand_drip">{grindLabels.hand_drip}</option>
+              <option value="espresso">{grindLabels.espresso}</option>
+            </select>
+          </div>
+        )}
 
         <div className="flex items-center gap-4 mb-4">
           <label className="text-sm font-medium text-coral-500">數量</label>

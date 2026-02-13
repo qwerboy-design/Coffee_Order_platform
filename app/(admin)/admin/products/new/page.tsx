@@ -1,8 +1,8 @@
-'use client';
-
+import { getProductCategories } from '@/lib/supabase/categories';
 import ProductForm from '../_components/ProductForm';
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+    const categories = await getProductCategories();
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="mb-6">
@@ -12,7 +12,7 @@ export default function NewProductPage() {
                 </p>
             </div>
 
-            <ProductForm />
+            <ProductForm categories={categories} />
         </div>
     );
 }

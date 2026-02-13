@@ -8,7 +8,7 @@ export async function getProducts(activeOnly = true): Promise<Product[]> {
   try {
     let query = supabase
       .from(TABLES.PRODUCTS)
-      .select('*')
+      .select('*, product_categories(slug, name)')
       .order('created_at', { ascending: false });
 
     if (activeOnly) {
@@ -19,11 +19,12 @@ export async function getProducts(activeOnly = true): Promise<Product[]> {
 
     if (error) throw error;
 
-    return data.map(record => {
+    return (data || []).map(record => {
       const images = record.images;
       const firstImageUrl = Array.isArray(images) && images[0] && typeof images[0] === 'object' && images[0].url
         ? (images[0] as { url: string }).url
         : '';
+      const pc = record.product_categories as { slug?: string; name?: string } | null;
       return {
         id: record.id,
         name: record.name,
@@ -33,6 +34,8 @@ export async function getProducts(activeOnly = true): Promise<Product[]> {
         stock: record.stock,
         grind_option: record.grind_option,
         is_active: record.is_active,
+        category_slug: pc?.slug ?? undefined,
+        category_name: pc?.name ?? undefined,
         created_at: record.created_at,
         updated_at: record.updated_at,
       };
@@ -50,7 +53,7 @@ export async function getProductById(id: string): Promise<Product | null> {
   try {
     const { data, error } = await supabase
       .from(TABLES.PRODUCTS)
-      .select('*')
+      .select('*, product_categories(slug, name)')
       .eq('id', id)
       .single();
 
@@ -65,6 +68,7 @@ export async function getProductById(id: string): Promise<Product | null> {
     const firstImageUrl = Array.isArray(images) && images[0] && typeof images[0] === 'object' && (images[0] as { url?: string }).url
       ? (images[0] as { url: string }).url
       : '';
+    const pc = data.product_categories as { slug?: string; name?: string } | null;
     return {
       id: data.id,
       name: data.name,
@@ -74,6 +78,8 @@ export async function getProductById(id: string): Promise<Product | null> {
       stock: data.stock,
       grind_option: data.grind_option,
       is_active: data.is_active,
+      category_slug: pc?.slug ?? undefined,
+      category_name: pc?.name ?? undefined,
       created_at: data.created_at,
       updated_at: data.updated_at,
     };

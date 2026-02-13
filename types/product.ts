@@ -9,6 +9,8 @@ export interface Product {
   stock: number;
   grind_option: GrindOption;
   is_active: boolean;
+  category_slug?: string;
+  category_name?: string;
   created_at?: string;
   updated_at?: string;
 }

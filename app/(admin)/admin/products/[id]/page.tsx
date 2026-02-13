@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase/client';
+import { getProductCategories } from '@/lib/supabase/categories';
 import ProductForm from '../_components/ProductForm';
 
 interface EditProductPageProps {
@@ -72,13 +73,15 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
         variants
     };
 
+    const categories = await getProductCategories();
+
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">編輯商品</h1>
             </div>
 
-            <ProductForm initialData={transformedProduct} />
+            <ProductForm initialData={transformedProduct} categories={categories} />
         </div>
     );
 }
