@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 interface LinkGoogleButtonProps {
   onSuccess?: () => void;
@@ -17,30 +17,33 @@ export function LinkGoogleButton({ onSuccess, onError }: LinkGoogleButtonProps) 
   const buttonRef = useRef<HTMLDivElement>(null);
 
   // 處理 Google 綁定回調
-  const handleGoogleLink = async (response: any) => {
-    setIsLoading(true);
+  const handleGoogleLink = useCallback(
+    async (response: any) => {
+      setIsLoading(true);
 
-    try {
-      const result = await fetch('/api/auth/link-google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: response.credential }),
-      });
+      try {
+        const result = await fetch('/api/auth/link-google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: response.credential }),
+        });
 
-      const data = await result.json();
+        const data = await result.json();
 
-      if (data.success) {
-        onSuccess?.();
-      } else {
-        onError?.(data.error || '綁定 Google 帳號失敗');
+        if (data.success) {
+          onSuccess?.();
+        } else {
+          onError?.(data.error || '綁定 Google 帳號失敗');
+        }
+      } catch (error) {
+        console.error('Link Google error:', error);
+        onError?.('網路錯誤，請稍後再試');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Link Google error:', error);
-      onError?.('網路錯誤，請稍後再試');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [onSuccess, onError]
+  );
 
   // 載入 Google Identity Services
   useEffect(() => {
@@ -109,7 +112,7 @@ export function LinkGoogleButton({ onSuccess, onError }: LinkGoogleButtonProps) 
       console.error('Google button initialization error:', error);
       onError?.('Google 初始化失敗');
     }
-  }, [isScriptLoaded, onError]);
+  }, [isScriptLoaded, onError, handleGoogleLink]);
 
   return (
     <div className="relative">

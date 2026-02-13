@@ -9,18 +9,35 @@ function pickCategory(record: Record<string, unknown>): { slug?: string; name?: 
   return pc && typeof pc === 'object' && 'slug' in pc ? (pc as { slug?: string; name?: string }) : null;
 }
 
+/** 後台 option 回傳形狀（含 position、product_option_values） */
+interface RawProductOption {
+  id: string;
+  name: string;
+  position?: number;
+  product_option_values?: RawProductOptionValue[];
+}
+interface RawProductOptionValue {
+  id: string;
+  name: string;
+  image_url?: string | null;
+  position?: number;
+}
+
 /** 將後台 options/variants 轉成前台型別 */
 function mapOptionsAndVariants(record: Record<string, unknown>): { options?: Product['options']; variants?: Product['variants'] } {
   const rawOpts = record.product_options;
   const rawVars = record.product_variants;
   const options: Product['options'] = Array.isArray(rawOpts)
-    ? rawOpts
-        .sort((a: { position?: number }, b: { position?: number }) => (a.position ?? 0) - (b.position ?? 0))
-        .map((opt: { id: string; name: string; product_option_values?: unknown[] }) => {
-          const values = Array.isArray(opt.product_option_values)
-            ? opt.product_option_values
-                .sort((a: { position?: number }, b: { position?: number }) => (a.position ?? 0) - (b.position ?? 0))
-                .map((v: { id: string; name: string; image_url?: string | null }) => ({
+    ? (rawOpts as RawProductOption[])
+        .slice()
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        .map((opt) => {
+          const vals = opt.product_option_values;
+          const values = Array.isArray(vals)
+            ? (vals as RawProductOptionValue[])
+                .slice()
+                .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                .map((v) => ({
                   id: v.id,
                   name: v.name,
                   image_url: v.image_url ?? undefined,
