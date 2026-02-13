@@ -4,13 +4,14 @@
 
 ## 功能特色
 
-- 🛒 **商品展示與購物車**: 完整的電商購物體驗
+- 🛒 **商品展示與購物車**: 完整的電商購物體驗；支援多規格商品（顏色、尺寸等）選項與變體價格/庫存
+- 📂 **商品分類**: 後台必填商品選項（食品、3C、器具、咖啡豆）；前台顯示分類標籤，咖啡豆品項可選研磨
 - 🔐 **多元認證方式**: 支援 Email OTP 驗證碼登入、Google OAuth 登入
 - 👤 **會員系統**: 帳號管理、Google 帳號綁定/解綁、訂單歷史查詢
 - 📦 **訂單管理**: 自動化訂單處理流程
 - 🔔 **即時通知**: 整合 LINE Notify、Email、SMS 通知
-- 📊 **後台管理**: 訂單與商品管理介面
-- 🖼️ **圖片管理**: 整合 Supabase Storage 的圖片上傳與管理功能
+- 📊 **後台管理**: 訂單與商品管理；商品多規格（product_options / product_option_values / product_variants）、圖片上傳（選填）
+- 🖼️ **圖片管理**: 整合 Supabase Storage 的圖片上傳與管理（支援手機上傳）；前台依商品圖片與規格即時顯示
 - 🤖 **N8N 自動化**: 完整的自動化工作流程
 - 🧪 **系統診斷**: 內建 Storage 與資料庫連線自動化檢測工具
 
@@ -81,14 +82,17 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 3. `supabase/migrations/003_create_triggers_and_functions.sql` - 建立觸發器和函數
 4. `supabase/migrations/004_create_rls_policies.sql` - 建立 RLS 政策（可選）
 5. `supabase/migrations/005_add_oauth_id.sql` - 添加 OAuth ID 欄位（支援 Google 登入）
+6. `supabase/migrations/006_fix_rls_policies.sql` - 修正 RLS 政策
+7. `supabase/migrations/007_create_admin_tables.sql` - 後台表（含 product_categories）
+8. `supabase/migrations/008_extend_products_table.sql` - 擴展商品表（category_id、images 等）
+9. `supabase/migrations/009_shopee_products_and_storage.sql` - 商品規格與 Storage（product_options、product_option_values、product_variants）
+10. `supabase/migrations/010_seed_admin_user.sql` - 種子管理員（可選）
+11. `supabase/migrations/011_seed_product_options_food_3c_tools_coffee.sql` - 商品選項種子（食品、3C、器具、咖啡豆）
 
 **重要設定注意事項：**
 - 所有遷移文件必須按順序執行
-- 確保所有 ENUM 類型已建立
-- 確保所有外鍵關係正確設定
-- 確保所有 Trigger 和 RPC 函數已建立
-
-詳細資料庫結構請參考 [DATABASE.md](DATABASE.md) 文件。
+- 執行 011 後，後台「商品選項」下拉才會有食品、3C、器具、咖啡豆可選
+- 詳細資料庫結構請參考 [DATABASE.md](DATABASE.md) 文件
 
 ### 4. 設定 Email 服務（Resend）
 
@@ -161,9 +165,10 @@ Coffee_Order_platform/
 ├── lib/                   # 工具函數與配置
 │   ├── supabase/          # Supabase 操作
 │   │   ├── client.ts      # Supabase 客戶端配置
+│   │   ├── categories.ts  # 商品分類（後台選項：食品/3C/器具/咖啡豆）
 │   │   ├── customers.ts   # 客戶資料操作（含 OAuth 綁定/解綁）
 │   │   ├── orders.ts      # 訂單操作
-│   │   ├── products.ts    # 商品操作
+│   │   ├── products.ts    # 商品操作（含 options/variants 供前台規格顯示）
 │   │   └── otp.ts         # OTP 驗證碼操作
 │   ├── auth/              # 認證相關
 │   │   ├── session.ts     # JWT Session 管理
@@ -186,12 +191,15 @@ Coffee_Order_platform/
 
 ## 資料庫結構
 
-系統使用 Supabase (PostgreSQL) 作為資料庫，包含 6 個主要 Table：
+系統使用 Supabase (PostgreSQL) 作為資料庫，主要 Table 包含：
 
-- **products** - 商品資料表
+- **products** - 商品資料表（含 `category_id`、`images` JSONB）
+- **product_categories** - 商品分類（含預設：食品、3C、器具、咖啡豆）
+- **product_options** / **product_option_values** - 商品規格選項與選項值（如顏色、尺寸）
+- **product_variants** - 商品變體（規格組合之價格、庫存、SKU）
 - **orders** - 訂單主檔表
 - **order_items** - 訂單明細表
-- **customers** - 客戶資料表（含 `oauth_id` 欄位支援 OAuth 綁定）
+- **customers** - 客戶資料表（含 `oauth_id` 支援 OAuth 綁定）
 - **order_status_log** - 訂單狀態歷程表
 - **otp_tokens** - OTP 驗證碼表（支援 Email OTP 登入）
 
@@ -199,7 +207,7 @@ Coffee_Order_platform/
 - 使用 PostgreSQL ENUM 類型確保資料一致性
 - 使用 UUID 作為主鍵
 - 使用外鍵約束維護資料完整性
-- 使用 Triggers 自動化業務邏輯（狀態記錄、統計更新等）
+- 使用 Triggers 自動化業務邏輯（狀態記錄、統計更新、分類商品數等）
 - 使用 RPC 函數處理複雜操作（訂單編號生成、庫存扣減等）
 - 支援多種認證方式（Email + 密碼、OTP、Google OAuth）
 
@@ -379,6 +387,7 @@ GitHub Pages 只支援靜態網站，無法運行 Next.js 的服務器端功能�
 
 本專案包含詳細的技術文檔與自動化診斷工具，位於 `/docs` 與 `/scripts` 目錄下：
 
+- 📄 **專案更新紀錄**: [CHANGELOG.md](docs/CHANGELOG.md) - 近期功能與技術變更摘要。
 - 🛠️ **圖片上傳修復報告**: [IMAGE_UPLOAD_FIX.md](docs/IMAGE_UPLOAD_FIX.md) - 詳細記錄了上傳功能的實作與優化。
 - ✅ **上傳功能驗證指南**: [UPLOAD_TEST_GUIDE.md](docs/UPLOAD_TEST_GUIDE.md) - 快速測試功能是否運作正常的步驟。
 - 📋 **功能驗證清單**: [UPLOAD_VERIFICATION_CHECKLIST.md](docs/UPLOAD_VERIFICATION_CHECKLIST.md) - 系統化的功能測試查核表。

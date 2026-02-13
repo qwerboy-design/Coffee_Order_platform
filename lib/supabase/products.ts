@@ -9,15 +9,54 @@ function pickCategory(record: Record<string, unknown>): { slug?: string; name?: 
   return pc && typeof pc === 'object' && 'slug' in pc ? (pc as { slug?: string; name?: string }) : null;
 }
 
+/** 將後台 options/variants 轉成前台型別 */
+function mapOptionsAndVariants(record: Record<string, unknown>): { options?: Product['options']; variants?: Product['variants'] } {
+  const rawOpts = record.product_options;
+  const rawVars = record.product_variants;
+  const options: Product['options'] = Array.isArray(rawOpts)
+    ? rawOpts
+        .sort((a: { position?: number }, b: { position?: number }) => (a.position ?? 0) - (b.position ?? 0))
+        .map((opt: { id: string; name: string; product_option_values?: unknown[] }) => {
+          const values = Array.isArray(opt.product_option_values)
+            ? opt.product_option_values
+                .sort((a: { position?: number }, b: { position?: number }) => (a.position ?? 0) - (b.position ?? 0))
+                .map((v: { id: string; name: string; image_url?: string | null }) => ({
+                  id: v.id,
+                  name: v.name,
+                  image_url: v.image_url ?? undefined,
+                }))
+            : [];
+          return { id: opt.id, name: opt.name, values };
+        })
+    : undefined;
+  const variants: Product['variants'] = Array.isArray(rawVars)
+    ? rawVars
+        .filter((v: { is_active?: boolean }) => v.is_active !== false)
+        .map((v: { id: string; price: number; stock: number; options?: Record<string, string> }) => ({
+          id: v.id,
+          price: typeof v.price === 'number' ? v.price : parseFloat(String(v.price)),
+          stock: Number(v.stock) || 0,
+          is_active: true,
+          options: (v.options && typeof v.options === 'object') ? v.options : {},
+        }))
+    : undefined;
+  return { options, variants };
+}
+
 /**
  * 取得所有產品（可選擇只顯示上架商品）
- * 使用 supabaseAdmin 以確保 join product_categories 不受 RLS 影響，種類可正確回傳
+ * 含 product_categories、product_options、product_option_values、product_variants 供前台呈現規格
  */
 export async function getProducts(activeOnly = true): Promise<Product[]> {
   try {
     let query = supabaseAdmin
       .from(TABLES.PRODUCTS)
-      .select('*, product_categories(slug, name)')
+      .select(`
+        *,
+        product_categories(slug, name),
+        product_options(id, name, position, product_option_values(id, name, image_url, position)),
+        product_variants(id, price, stock, options, is_active)
+      `)
       .order('created_at', { ascending: false });
 
     if (activeOnly) {
@@ -34,19 +73,24 @@ export async function getProducts(activeOnly = true): Promise<Product[]> {
         ? (images[0] as { url: string }).url
         : '';
       const pc = pickCategory(record as Record<string, unknown>);
+      const { options, variants } = mapOptionsAndVariants(record as Record<string, unknown>);
+      const basePrice = record.price != null ? parseFloat(String(record.price)) : 0;
+      const baseStock = Number(record.stock) || 0;
       return {
         id: record.id,
         name: record.name,
         description: record.description || '',
-        price: parseFloat(record.price),
+        price: basePrice,
         image_url: record.image_url || firstImageUrl || '',
-        stock: record.stock,
+        stock: baseStock,
         grind_option: record.grind_option,
         is_active: record.is_active,
         category_slug: pc?.slug ?? undefined,
         category_name: pc?.name ?? undefined,
         created_at: record.created_at,
         updated_at: record.updated_at,
+        options,
+        variants,
       };
     });
   } catch (error) {
