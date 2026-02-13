@@ -1,26 +1,13 @@
-import { unstable_cache } from 'next/cache';
 import ProductCard from '@/components/customer/ProductCard';
 import { getProducts } from '@/lib/supabase/products';
 import type { Product } from '@/types/product';
-
-// 快取產品數據，60 秒重新驗證
-const getCachedProducts = unstable_cache(
-  async (): Promise<Product[]> => {
-    return await getProducts(true);
-  },
-  ['active-products'],
-  {
-    revalidate: 60, // 60 秒後重新驗證
-    tags: ['products'],
-  }
-);
 
 export default async function HomePage() {
   let products: Product[] = [];
   let error: string | null = null;
 
   try {
-    products = await getCachedProducts();
+    products = await getProducts(true);
   } catch (err) {
     console.error('Error fetching products:', err);
     error = err instanceof Error ? err.message : '載入商品失敗';

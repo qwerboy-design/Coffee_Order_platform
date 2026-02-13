@@ -49,6 +49,11 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
         </div>
       )}
       <div className="p-4">
+        {product.category_name && (
+          <span className="inline-block text-xs font-medium text-coffee-600 bg-coffee-50 px-2 py-0.5 rounded mb-2">
+            {product.category_name}
+          </span>
+        )}
         <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
         <p className="text-gray-600 text-sm mb-4 line-clamp-2">
           {product.description}

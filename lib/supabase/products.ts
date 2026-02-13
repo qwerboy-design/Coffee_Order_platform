@@ -1,12 +1,21 @@
 import { supabase, supabaseAdmin, TABLES } from './client';
 import type { Product } from '@/types/product';
 
+/** 從 join 結果取出分類（支援 object 或 array 回傳） */
+function pickCategory(record: Record<string, unknown>): { slug?: string; name?: string } | null {
+  const raw = record.product_categories ?? record.category;
+  if (!raw) return null;
+  const pc = Array.isArray(raw) ? raw[0] : raw;
+  return pc && typeof pc === 'object' && 'slug' in pc ? (pc as { slug?: string; name?: string }) : null;
+}
+
 /**
  * 取得所有產品（可選擇只顯示上架商品）
+ * 使用 supabaseAdmin 以確保 join product_categories 不受 RLS 影響，種類可正確回傳
  */
 export async function getProducts(activeOnly = true): Promise<Product[]> {
   try {
-    let query = supabase
+    let query = supabaseAdmin
       .from(TABLES.PRODUCTS)
       .select('*, product_categories(slug, name)')
       .order('created_at', { ascending: false });
@@ -21,10 +30,10 @@ export async function getProducts(activeOnly = true): Promise<Product[]> {
 
     return (data || []).map(record => {
       const images = record.images;
-      const firstImageUrl = Array.isArray(images) && images[0] && typeof images[0] === 'object' && images[0].url
+      const firstImageUrl = Array.isArray(images) && images[0] && typeof images[0] === 'object' && (images[0] as { url?: string }).url
         ? (images[0] as { url: string }).url
         : '';
-      const pc = record.product_categories as { slug?: string; name?: string } | null;
+      const pc = pickCategory(record as Record<string, unknown>);
       return {
         id: record.id,
         name: record.name,
@@ -47,11 +56,11 @@ export async function getProducts(activeOnly = true): Promise<Product[]> {
 }
 
 /**
- * 根據 ID 取得單一產品
+ * 根據 ID 取得單一產品（使用 admin 以正確取得種類）
  */
 export async function getProductById(id: string): Promise<Product | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from(TABLES.PRODUCTS)
       .select('*, product_categories(slug, name)')
       .eq('id', id)
@@ -68,7 +77,7 @@ export async function getProductById(id: string): Promise<Product | null> {
     const firstImageUrl = Array.isArray(images) && images[0] && typeof images[0] === 'object' && (images[0] as { url?: string }).url
       ? (images[0] as { url: string }).url
       : '';
-    const pc = data.product_categories as { slug?: string; name?: string } | null;
+    const pc = pickCategory(data as Record<string, unknown>);
     return {
       id: data.id,
       name: data.name,
