@@ -3,7 +3,7 @@
 import { supabaseAdmin } from '@/lib/supabase/client';
 import { CreateProductInput, ProductOption, ProductVariant } from '@/types/admin-product';
 import { getSession } from '@/lib/auth/session';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 export interface ActionResponse<T = any> {
     success: boolean;
@@ -120,6 +120,7 @@ export async function createProduct(input: CreateProductInput): Promise<ActionRe
         }
 
         revalidatePath('/admin/products');
+        revalidateTag('products');
         return { success: true, data: product };
 
     } catch (error) {
@@ -138,6 +139,7 @@ export async function deleteProduct(id: string): Promise<ActionResponse> {
     if (error) return { success: false, error: error.message };
 
     revalidatePath('/admin/products');
+    revalidateTag('products');
     return { success: true };
 }
 
@@ -323,5 +325,6 @@ export async function updateProduct(id: string, input: CreateProductInput): Prom
     }
 
     revalidatePath('/admin/products');
+    revalidateTag('products');
     return { success: true };
 }

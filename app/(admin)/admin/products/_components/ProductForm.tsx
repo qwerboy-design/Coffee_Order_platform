@@ -54,11 +54,6 @@ export default function ProductForm({ initialData, categories = [] }: ProductFor
     const baseStock = watch('stock');
 
     const onSubmit = async (data: any) => {
-        if (images.length === 0) {
-            toastError('請至少上傳一張商品圖片');
-            return;
-        }
-
         setLoading(true);
 
         try {
