@@ -33,10 +33,15 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
       lastModified: file.lastModified
     });
 
-    // 驗證檔案類型
-    if (!file.type.startsWith('image/')) {
-      console.error('[Upload] Invalid file type:', file.type);
-      return { success: false, error: '無效的檔案類型，僅支援圖片格式' };
+    // 驗證檔案類型（手機相機/相簿可能回傳空 type，改以副檔名判斷）
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic'];
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'];
+    const hasValidMime = file.type && (file.type.startsWith('image/') || allowedMimes.includes(file.type));
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const hasValidExt = allowedExtensions.includes(ext);
+    if (!hasValidMime && !hasValidExt) {
+      console.error('[Upload] Invalid file type:', file.type, 'name:', file.name);
+      return { success: false, error: '無效的檔案類型，僅支援圖片格式（PNG、JPG、GIF、WebP、HEIC）' };
     }
 
     // 驗證檔案大小 (5MB 限制)
@@ -46,10 +51,17 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
       return { success: false, error: `檔案大小超過 5MB 限制（當前：${(file.size / 1024 / 1024).toFixed(2)}MB）` };
     }
 
-    // 生成唯一檔名
-    const fileExt = file.name.split('.').pop() || 'jpg';
+    // 生成唯一檔名（副檔名若無效則用 jpg）
+    const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const fileExt = allowedExtensions.includes(rawExt) ? rawExt : 'jpg';
     const fileName = `${randomUUID()}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
+
+    const mimeMap: Record<string, string> = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+      gif: 'image/gif', webp: 'image/webp', heic: 'image/heic',
+    };
+    const contentType = (file.type && file.type.startsWith('image/')) ? file.type : (mimeMap[fileExt] || 'image/jpeg');
 
     console.log('[Upload] Uploading to path:', filePath);
 
@@ -63,7 +75,7 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('products')
       .upload(filePath, buffer, {
-        contentType: file.type,
+        contentType,
         upsert: false,
         cacheControl: '3600'
       });

@@ -163,6 +163,7 @@ export default function VariantManager({
                 {options.map((option, optIdx) => (
                     <div key={optIdx} className="p-4 bg-gray-50 rounded-lg relative border border-gray-200">
                         <button
+                            type="button"
                             onClick={() => removeOption(optIdx)}
                             className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
                         >
@@ -187,7 +188,7 @@ export default function VariantManager({
                                         <div key={valIdx} className="flex flex-col items-center">
                                             <div className="flex items-center gap-1 bg-white border border-gray-300 rounded px-2 py-1 text-sm">
                                                 <span>{val.name}</span>
-                                                <button onClick={() => removeOptionValue(optIdx, valIdx)} className="text-gray-400 hover:text-red-500"><X size={12} /></button>
+                                                <button type="button" onClick={() => removeOptionValue(optIdx, valIdx)} className="text-gray-400 hover:text-red-500"><X size={12} /></button>
                                             </div>
                                             {/* Only allow image for first option (usually Color) */}
                                             {optIdx === 0 && (
@@ -196,6 +197,7 @@ export default function VariantManager({
                                                         <div className="relative w-8 h-8 group">
                                                             <img src={val.image_url} alt={val.name} className="w-full h-full object-cover rounded" />
                                                             <button
+                                                                type="button"
                                                                 onClick={() => updateOptionValueImage(optIdx, valIdx, '')}
                                                                 className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100"
                                                             >
@@ -247,6 +249,7 @@ export default function VariantManager({
 
                 {options.length < 2 && (
                     <button
+                        type="button"
                         onClick={addOption}
                         className="flex items-center gap-2 text-coffee-600 hover:text-coffee-700 font-medium"
                     >
@@ -262,9 +265,9 @@ export default function VariantManager({
                         <h3 className="text-sm font-medium text-gray-700">規格明細 ({variants.length})</h3>
                         <div className="flex gap-2">
                             <input type="number" placeholder="批次價格" className="text-sm border rounded p-1 w-20" id="batch-price" />
-                            <button onClick={() => applyBatch('price', Number((document.getElementById('batch-price') as HTMLInputElement).value))} className="text-xs bg-gray-200 px-2 rounded">套用價格</button>
+                            <button type="button" onClick={() => applyBatch('price', Number((document.getElementById('batch-price') as HTMLInputElement).value))} className="text-xs bg-gray-200 px-2 rounded">套用價格</button>
                             <input type="number" placeholder="批次庫存" className="text-sm border rounded p-1 w-20" id="batch-stock" />
-                            <button onClick={() => applyBatch('stock', Number((document.getElementById('batch-stock') as HTMLInputElement).value))} className="text-xs bg-gray-200 px-2 rounded">套用庫存</button>
+                            <button type="button" onClick={() => applyBatch('stock', Number((document.getElementById('batch-stock') as HTMLInputElement).value))} className="text-xs bg-gray-200 px-2 rounded">套用庫存</button>
                         </div>
                     </div>
                     <table className="min-w-full divide-y divide-gray-200">

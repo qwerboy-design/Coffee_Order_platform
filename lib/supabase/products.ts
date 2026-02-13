@@ -19,18 +19,24 @@ export async function getProducts(activeOnly = true): Promise<Product[]> {
 
     if (error) throw error;
 
-    return data.map(record => ({
-      id: record.id,
-      name: record.name,
-      description: record.description || '',
-      price: parseFloat(record.price),
-      image_url: record.image_url || '',
-      stock: record.stock,
-      grind_option: record.grind_option,
-      is_active: record.is_active,
-      created_at: record.created_at,
-      updated_at: record.updated_at,
-    }));
+    return data.map(record => {
+      const images = record.images;
+      const firstImageUrl = Array.isArray(images) && images[0] && typeof images[0] === 'object' && images[0].url
+        ? (images[0] as { url: string }).url
+        : '';
+      return {
+        id: record.id,
+        name: record.name,
+        description: record.description || '',
+        price: parseFloat(record.price),
+        image_url: record.image_url || firstImageUrl || '',
+        stock: record.stock,
+        grind_option: record.grind_option,
+        is_active: record.is_active,
+        created_at: record.created_at,
+        updated_at: record.updated_at,
+      };
+    });
   } catch (error) {
     console.error('Error fetching products:', error);
     throw new Error('無法取得產品列表');
@@ -55,12 +61,16 @@ export async function getProductById(id: string): Promise<Product | null> {
       throw error;
     }
 
+    const images = data.images;
+    const firstImageUrl = Array.isArray(images) && images[0] && typeof images[0] === 'object' && (images[0] as { url?: string }).url
+      ? (images[0] as { url: string }).url
+      : '';
     return {
       id: data.id,
       name: data.name,
       description: data.description || '',
       price: parseFloat(data.price),
-      image_url: data.image_url || '',
+      image_url: data.image_url || firstImageUrl || '',
       stock: data.stock,
       grind_option: data.grind_option,
       is_active: data.is_active,
