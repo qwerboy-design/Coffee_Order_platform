@@ -53,7 +53,7 @@ export function LinkGoogleButton({ onSuccess, onError }: LinkGoogleButtonProps) 
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
-    
+
     script.onload = () => {
       setIsScriptLoaded(true);
     };
@@ -86,6 +86,7 @@ export function LinkGoogleButton({ onSuccess, onError }: LinkGoogleButtonProps) 
     }
 
     try {
+      // @ts-ignore
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: handleGoogleLink,
@@ -93,6 +94,7 @@ export function LinkGoogleButton({ onSuccess, onError }: LinkGoogleButtonProps) 
         cancel_on_tap_outside: true,
       });
 
+      // @ts-ignore
       window.google.accounts.id.renderButton(buttonRef.current, {
         theme: 'outline',
         size: 'large',
@@ -111,7 +113,7 @@ export function LinkGoogleButton({ onSuccess, onError }: LinkGoogleButtonProps) 
 
   return (
     <div className="relative">
-      <div 
+      <div
         ref={buttonRef}
         className={`
           ${isLoading ? 'opacity-50 pointer-events-none' : ''}

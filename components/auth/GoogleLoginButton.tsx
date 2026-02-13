@@ -109,7 +109,7 @@ export function GoogleLoginButton({
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
-    
+
     script.onload = () => {
       setIsScriptLoaded(true);
     };
@@ -154,6 +154,7 @@ export function GoogleLoginButton({
         itp_support: true,
       };
 
+      // @ts-ignore
       window.google.accounts.id.initialize(initConfig);
 
       // 渲染 Google 登入按鈕
@@ -164,10 +165,11 @@ export function GoogleLoginButton({
         text: text,
         shape: 'rectangular',
         logo_alignment: 'left',
-        width: width || (isMobileDevice() ? undefined : buttonRef.current.offsetWidth || 400),
+        width: width || (isMobileDevice() ? undefined : (buttonRef.current?.offsetWidth || 400)),
         locale: 'zh_TW',
       };
 
+      // @ts-ignore
       window.google.accounts.id.renderButton(buttonRef.current, buttonConfig);
     } catch (error) {
       console.error('Google button initialization error:', error);
@@ -190,9 +192,9 @@ export function GoogleLoginButton({
           </ol>
         </div>
       )}
-      
-      <div 
-        ref={buttonRef} 
+
+      <div
+        ref={buttonRef}
         id="google-login-button"
         className={`
           w-full

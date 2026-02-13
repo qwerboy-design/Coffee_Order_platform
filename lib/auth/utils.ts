@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getSession, requireSession, type SessionPayload } from './session';
+// @ts-ignore
 import bcrypt from 'bcryptjs';
 
 /**

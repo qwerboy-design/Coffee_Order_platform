@@ -10,7 +10,9 @@
 - 📦 **訂單管理**: 自動化訂單處理流程
 - 🔔 **即時通知**: 整合 LINE Notify、Email、SMS 通知
 - 📊 **後台管理**: 訂單與商品管理介面
+- 🖼️ **圖片管理**: 整合 Supabase Storage 的圖片上傳與管理功能
 - 🤖 **N8N 自動化**: 完整的自動化工作流程
+- 🧪 **系統診斷**: 內建 Storage 與資料庫連線自動化檢測工具
 
 ## 技術棧
 
@@ -140,7 +142,9 @@ Coffee_Order_platform/
 │       │   └── me/        # 取得用戶資料
 │       ├── diagnostics/   # 診斷 API（用於檢查 Supabase 連線）
 │       ├── orders/        # 訂單 API
-│       └── products/       # 商品 API
+│       ├── products/      # 商品 API
+│       ├── upload/        # 圖片上傳 API (Server Actions)
+│       └── storage-check/ # Storage 診斷 API
 ├── components/            # React 元件
 │   ├── auth/              # 認證元件
 │   │   ├── OTPInput.tsx   # OTP 輸入元件
@@ -149,6 +153,9 @@ Coffee_Order_platform/
 │   │   └── LinkGoogleButton.tsx # Google 綁定按鈕
 │   ├── admin/             # 後台管理元件
 │   ├── customer/          # 顧客端元件
+│   ├── ui/                # UI 基底元件
+│   │   ├── ImageUpload.tsx # 圖片上傳組件
+│   │   └── Toaster.tsx    # 通知系統
 │   └── shared/            # 共用元件
 │       └── UserMenu.tsx   # 用戶選單（含個人資料連結）
 ├── lib/                   # 工具函數與配置
@@ -367,6 +374,15 @@ GitHub Pages 只支援靜態網站，無法運行 Next.js 的服務器端功能�
 - 構建時環境變數可以為空，系統已處理此情況
 - 運行時必須設定所有必填環境變數
 - `JWT_SECRET` 必須至少 32 字元，建議使用隨機字串生成器
+
+## 技術文件與診斷工具
+
+本專案包含詳細的技術文檔與自動化診斷工具，位於 `/docs` 與 `/scripts` 目錄下：
+
+- 🛠️ **圖片上傳修復報告**: [IMAGE_UPLOAD_FIX.md](docs/IMAGE_UPLOAD_FIX.md) - 詳細記錄了上傳功能的實作與優化。
+- ✅ **上傳功能驗證指南**: [UPLOAD_TEST_GUIDE.md](docs/UPLOAD_TEST_GUIDE.md) - 快速測試功能是否運作正常的步驟。
+- 📋 **功能驗證清單**: [UPLOAD_VERIFICATION_CHECKLIST.md](docs/UPLOAD_VERIFICATION_CHECKLIST.md) - 系統化的功能測試查核表。
+- 🧪 **自動化測試腳本**: 位於 `/scripts` 目錄，可用於 CLI 測試環境配置。
 
 ## 授權
 

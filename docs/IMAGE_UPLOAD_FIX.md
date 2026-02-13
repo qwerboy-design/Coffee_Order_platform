@@ -150,6 +150,16 @@ VALUES ('products', 'products', true);
 3. 檢查檔案格式和大小
 4. 查看控制台的詳細錯誤訊息
 
+### 問題 5: 部署時 TypeScript 型別報錯
+
+**錯誤訊息：** `Type error: Cannot find module '@types/bcryptjs'` 或 `Cannot find name 'google'`
+
+**解決方案：**
+1. 確保相關型別定義已安裝在 `devDependencies`
+2. 在 `tsconfig.json` 的 `include` 中包含型別定義目錄
+3. 對於第三方透明載入的腳本（如 Google Identity Services），在組件中使用 `// @ts-ignore` 忽略特定行的型別檢查
+4. 確保 `bcryptjs` 等模組在匯入時有正確的型別聲明或被忽略檢查
+
 ### 問題 4: 無法獲取公開 URL
 
 **解決方案：**
